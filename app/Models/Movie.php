@@ -1,0 +1,31 @@
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Movie extends Model {
+    protected $fillable = ['title', 'description', 'year', 'genre_id', 'price', 'stock', 'poster'];
+    
+    protected $casts = ['price' => 'decimal:2'];
+    
+    public function genre() {
+        return $this->belongsTo(Genre::class);
+    }
+    
+    public function ratings() {
+        return $this->hasMany(Rating::class);
+    }
+    
+    public function rentals() {
+        return $this->hasMany(Rental::class);
+    }
+
+    
+    public function userRating() {
+        return $this->hasOne(Rating::class)->where('user_id', auth()->id());
+    }
+    
+    public function getAvgRatingAttribute() {
+        return $this->ratings()->avg('rating') ?? 0;
+    }
+}

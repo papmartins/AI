@@ -9,25 +9,43 @@ class WishlistController extends Controller
 {
     public function index()
     {
-        $movies = Movie::whereHas('wishlist', fn($q) => $q->where('user_id', auth()->id()))
+        $userId = auth()->id();
+        // Exclude movies already rented by the user
+        $rentedIds = auth()->user()->rentals()->where('returned', 0)->pluck('movie_id')->toArray();
+
+        $movies = Movie::whereHas('wishlist', fn($q) => $q->where('user_id', $userId))
+            ->whereNotIn('id', $rentedIds)
             ->with('genre')
             ->paginate(12);
+        
+        $movies->getCollection()->transform(function($movie) {
+            $movie->avg_rating = $movie->ratings()->avg('rating');
+            return $movie;
+        });
 
-        return Inertia::render('Wishlist/Index', compact('movies'));
+        $rentedMovieIds = $rentedIds;
+
+        return Inertia::render('Wishlist/Index', compact('movies', 'rentedMovieIds'));
     }
 
     public function toggle(Request $request, Movie $movie)
     {
         $userId = auth()->id();
-        
-        if (auth()->user()->wishlist()->where('movie_id', $movie->id)->exists()) {
-            auth()->user()->wishlist()->detach($movie->id);
-            $message = 'Removed from wishlist';
-        } else {
-            auth()->user()->wishlist()->attach($movie->id);
-            $message = 'Added to wishlist';
-        }
+        // use the Wishlist model relation (hasMany) instead of pivot attach/detach
+        $wishlistRelation = auth()->user()->wishlist();
 
-        return back()->with('success', $message);
+            if ($wishlistRelation->where('movie_id', $movie->id)->exists()) {
+                $wishlistRelation->where('movie_id', $movie->id)->delete();
+                $message = 'Removed from wishlist';
+            } else {
+                $wishlistRelation->create(['movie_id' => $movie->id]);
+                $message = 'Added to wishlist';
+            }
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['message' => $message]);
+            }
+
+            return redirect()->back()->with('success', $message);
     }
 }

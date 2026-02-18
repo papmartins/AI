@@ -44,10 +44,14 @@ class User extends Authenticatable
     ];
 
     public function wishlist() {
-        return $this->belongsToMany(Movie::class, 'wishlist');
+        return $this->hasMany(Wishlist::class);
     }
 
     public function rentals() {
         return $this->hasMany(Rental::class);
+    }
+
+    public function roleForMovie($movieId) {
+        return Rating::where('user_id', $this->id)->where('movie_id', $movieId)->first();
     }
 }

@@ -1,60 +1,68 @@
 <template>
-  <div class="max-w-7xl mx-auto p-6">
-    <!-- Filters -->
-    <div class="mb-8 flex flex-wrap gap-4">
-      <input 
-        v-model="search"
-        @input="fetchMovies"
-        placeholder="Search movies..."
-      >
-      
-      <select v-model="genre" class="px-4 py-2 border rounded-lg" @change="fetchMovies">
-        <option value="">All Genres</option>
-        <option v-for="genre in genres" :key="genre.id" :value="genre.id">{{ genre.name }}</option>
-      </select>
-    </div>
+  <Head title="Movies" />
+  <AuthenticatedLayout title="Movies">
+    <div class="max-w-7xl mx-auto p-6">
+      <!-- Suggestions Section -->
+      <div v-if="suggestions.length > 0" class="mb-12">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">🎬 Recommended for You</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <MovieCard 
+            v-for="movie in suggestions" 
+            :key="movie.id"
+            :movie="movie"
+            :rented-movie-ids="props.rentedMovieIds"
+            :show-score="true"
+            :score="movie.ratings_avg_rating"
+          />
+        </div>
+      </div>
 
-    <!-- Movies Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      <div 
-        v-for="movie in movies.data" 
-        :key="movie.id"
-        class="bg-white border rounded-lg shadow-md hover:shadow-xl transition-shadow p-6"
-      >
-        <h3 class="text-xl font-bold mb-2 line-clamp-2">{{ movie.title }} ({{ movie.year }})</h3>
-        <p class="text-gray-600 mb-3 line-clamp-2">{{ movie.description }}</p>
-        <div class="flex justify-between items-center mb-4">
-          <span class="text-lg font-semibold text-green-600">${{ movie.price }}</span>
-          <span class="text-sm text-gray-500">Stock: {{ movie.stock }}</span>
-        </div>
-        <div class="flex gap-2 mb-4">
-          <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">{{ movie.genre.name }}</span>
-        </div>
-        <Link 
-          :href="`/movies/${movie.id}`"
-          class="w-full block bg-indigo-600 text-white py-2 px-4 rounded-lg text-center hover:bg-indigo-700 transition-colors"
+      <!-- Filters -->
+      <div class="mb-8 flex flex-wrap gap-4">
+        <input 
+          v-model="search"
+          @input="fetchMovies"
+          placeholder="Search movies..."
         >
-          View Details
-        </Link>
+        
+        <select v-model="genre" class="px-4 py-2 border rounded-lg" @change="fetchMovies">
+          <option value="">All Genres</option>
+          <option v-for="genre in genres" :key="genre.id" :value="genre.id">{{ genre.name }}</option>
+        </select>
+      </div>
+
+      <!-- Movies Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div 
+          v-for="movie in movies.data" 
+          :key="movie.id"
+          :movie="movie"
+          :rented-movie-ids="props.rentedMovieIds"
+          :show-score="true"
+          :score="Number(movie.avg_rating)?.toFixed(1)"
+        />
+      </div>
+      <!-- Pagination -->
+      <div class="mt-12 flex justify-center">
+        <Pagination :links="movies.links" />
       </div>
     </div>
-
-    <!-- Pagination -->
-    <div class="mt-12 flex justify-center">
-      <Pagination :links="movies.links" />
-    </div>
-  </div>
+  </AuthenticatedLayout>
 </template>
 
 <script setup>
 import { Link, usePage, router } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { ref, computed } from 'vue';
 import Pagination from '@/Components/Pagination.vue';
+
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Head } from '@inertiajs/vue3';
 
 const props = defineProps({
   movies: Object,
   genres: Array,
   filters: Object,
+  rentedMovieIds: { type: Array, default: () => [] },
 });
 
 const search = ref(props.filters.search || '');
@@ -64,7 +72,6 @@ const page = usePage();
 // debounce simples sem lodash
 let timeout = null;
 const fetchMovies = () => {
-  console.log(genre)
   clearTimeout(timeout);
   timeout = setTimeout(() => {
     router.get(

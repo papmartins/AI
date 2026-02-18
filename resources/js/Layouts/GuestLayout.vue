@@ -10,6 +10,13 @@ import { Link } from '@inertiajs/vue3';
                 <ApplicationLogo class="w-20 h-20 fill-current text-gray-500" />
             </Link>
         </div>
+        <nav class="mt-4">
+            <div class="space-x-4 text-sm text-gray-700">
+                <Link :href="route('movies.index')" class="hover:underline">Filmes</Link>
+                <Link :href="route('wishlist.index')" class="hover:underline">Wishlist</Link>
+                <Link :href="route('rentals.index')" class="hover:underline">Aluguéis</Link>
+            </div>
+        </nav>
 
         <div
             class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg"

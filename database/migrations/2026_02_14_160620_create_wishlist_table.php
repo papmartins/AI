@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     public function up(): void {
-        Schema::create('wishlist', function (Blueprint $table) {
+        Schema::create('wishlists', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('movie_id')->constrained()->onDelete('cascade');
@@ -15,5 +15,5 @@ return new class extends Migration
             $table->unique(['user_id', 'movie_id']);
         });
     }
-    public function down(): void { Schema::dropIfExists('wishlist'); }
+    public function down(): void { Schema::dropIfExists('wishlists'); }
 };

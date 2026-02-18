@@ -29,6 +29,24 @@ class RentalController extends Controller
             'due_date' => now()->addDays(7),
         ]);
 
-        return back()->with('success', 'Movie rented! Due in 7 days.');
+        $message = 'Movie rented! Due in 7 days.';
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['message' => $message]);
+        }
+
+        return redirect()->back()->with('success', $message);
+    }
+
+    public function destroy(Rental $rental)
+    {
+        // Ensure the rental belongs to the authenticated user
+        if ($rental->user_id !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $rental->returned = true;
+        $rental->save();
+
+        return response()->json(['message' => 'Rental returned successfully']);
     }
 }

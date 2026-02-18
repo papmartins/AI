@@ -1,5 +1,6 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
@@ -8,6 +9,27 @@ import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { Link } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
+const page = usePage();
+const user = computed(() => page.props.value?.auth?.user ?? null);
+const props = defineProps({
+    title: {
+        type: String,
+        default: null,
+    },
+});
+
+// show flash success messages from server
+const flash = ref(page.props.value?.flash?.success ?? null);
+
+// update flash when Inertia shared props change
+watch(
+    () => page.props.value,
+    (p) => {
+        const val = p?.flash?.success ?? null;
+        flash.value = val;
+        if (flash.value) setTimeout(() => (flash.value = null), 4000);
+    }
+);
 </script>
 
 <template>
@@ -32,6 +54,15 @@ const showingNavigationDropdown = ref(false);
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
                                     Dashboard
                                 </NavLink>
+                                <NavLink :href="route('movies.index')" :active="route().current('movies.*')">
+                                    Movies
+                                </NavLink>
+                                <NavLink :href="route('wishlist.index')" :active="route().current('wishlist.*')">
+                                    Wishlist
+                                </NavLink>
+                                <NavLink :href="route('rentals.index')" :active="route().current('rentals.*')">
+                                    Rents
+                                </NavLink>
                             </div>
                         </div>
 
@@ -45,7 +76,7 @@ const showingNavigationDropdown = ref(false);
                                                 type="button"
                                                 class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
                                             >
-                                                {{ $page.props.auth.user.name }}
+                                                {{ user?.name || '' }}
 
                                                 <svg
                                                     class="ms-2 -me-0.5 h-4 w-4"
@@ -115,15 +146,24 @@ const showingNavigationDropdown = ref(false);
                         <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
                             Dashboard
                         </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('movies.index')" :active="route().current('movies.*')">
+                            Filmes
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('wishlist.index')" :active="route().current('wishlist.*')">
+                            Wishlist
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('rentals.index')" :active="route().current('rentals.*')">
+                            Aluguéis
+                        </ResponsiveNavLink>
                     </div>
 
                     <!-- Responsive Settings Options -->
                     <div class="pt-4 pb-1 border-t border-gray-200">
                         <div class="px-4">
                             <div class="font-medium text-base text-gray-800">
-                                {{ $page.props.auth.user.name }}
+                                {{ user?.name || '' }}
                             </div>
-                            <div class="font-medium text-sm text-gray-500">{{ $page.props.auth.user.email }}</div>
+                            <div class="font-medium text-sm text-gray-500">{{ user?.email || '' }}</div>
                         </div>
 
                         <div class="mt-3 space-y-1">
@@ -136,15 +176,27 @@ const showingNavigationDropdown = ref(false);
                 </div>
             </nav>
 
+            <!-- Flash message -->
+            <div v-if="flash" class="max-w-7xl mx-auto mt-4 px-4 sm:px-6 lg:px-8">
+                <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded">
+                    {{ flash }}
+                </div>
+            </div>
+
             <!-- Page Heading -->
-            <header class="bg-white shadow" v-if="$slots.header">
+            <header class="bg-white shadow" v-if="$slots.header || props.title">
                 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                    <slot name="header" />
+                    <template v-if="$slots.header">
+                        <slot name="header" />
+                    </template>
+                    <template v-else>
+                        <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ props.title }}</h2>
+                    </template>
                 </div>
             </header>
 
             <!-- Page Content -->
-            <main>
+            <main class="bg-gray-50">
                 <slot />
             </main>
         </div>

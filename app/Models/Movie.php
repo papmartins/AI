@@ -20,6 +20,9 @@ class Movie extends Model {
         return $this->hasMany(Rental::class);
     }
 
+    public function wishlist() {
+        return $this->hasMany(Wishlist::class);
+    }
     
     public function userRating() {
         return $this->hasOne(Rating::class)->where('user_id', auth()->id());

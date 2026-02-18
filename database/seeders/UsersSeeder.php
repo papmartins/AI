@@ -6,16 +6,52 @@ use Illuminate\Support\Facades\Hash;
 
 class UsersSeeder extends Seeder {
     public function run(): void {
-        $users = [
-            ['name' => 'John Doe', 'email' => 'john@email.com', 'password' => Hash::make('123')],
-            ['name' => 'Jane Smith', 'email' => 'jane@email.com', 'password' => Hash::make('123')],
-            ['name' => 'Bob Johnson', 'email' => 'bob@email.com', 'password' => Hash::make('123')],
-            ['name' => 'Alice Brown', 'email' => 'alice@email.com', 'password' => Hash::make('123')],
-        ];
+        $maleFirstNames = ['John', 'Michael', 'David', 'Robert', 'James', 'William', 'Richard', 'Joseph', 'Thomas', 'Daniel', 'Charles', 'Matthew', 'Anthony', 'Donald', 'Mark', 'Paul', 'Steven', 'Andrew', 'Kenneth', 'Joshua'];
+        $femaleFirstNames = ['Mary', 'Jennifer', 'Lisa', 'Sarah', 'Susan', 'Karen', 'Nancy', 'Betty', 'Margaret', 'Sandra', 'Ashley', 'Jessica', 'Elizabeth', 'Emily', 'Amanda', 'Melissa', 'Deborah', 'Stephanie', 'Rebecca', 'Laura'];
+        $lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Miller', 'Davis', 'Garcia', 'Rodriguez', 'Wilson', 'Martinez', 'Anderson', 'Taylor', 'Thomas', 'Hernandez', 'Moore', 'Martin', 'Jackson', 'Thompson', 'White'];
         
-        foreach ($users as $user) {
-            $user['created_at'] = $user['updated_at'] = now();
-            DB::table('users')->insert($user);
+        $users = [];
+        $now = now();
+        
+        $users[] = [
+            'name' => 'Alice Smith',
+            'email' => 'alice@email.com',
+            'password' => Hash::make('123'),
+            'gender' => 'F',
+            'birth_date' => '1990-05-15',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
+
+        for ($i = 1; $i <= 50; $i++) {
+            // Alternate between male and female
+            $isMale = $i % 2 === 0;
+            $firstNames = $isMale ? $maleFirstNames : $femaleFirstNames;
+            $gender = $isMale ? 'M' : 'F';
+            
+            $firstName = $firstNames[array_rand($firstNames)];
+            $lastName = $lastNames[array_rand($lastNames)];
+            
+            // Generate unique email
+            $email = strtolower($firstName[0] . $lastName . $i) . '@email.com';
+            
+            $birthYear = rand(1955, 2025);
+            $birthMonth = str_pad(rand(1, 12), 2, '0', STR_PAD_LEFT);
+            $birthDay = str_pad(rand(1, 28), 2, '0', STR_PAD_LEFT);
+            $birthDate = "$birthYear-$birthMonth-$birthDay";
+            
+            $users[] = [
+                'name' => $firstName . ' ' . $lastName,
+                'email' => $email,
+                'password' => Hash::make('123'),
+                'gender' => $gender,
+                'birth_date' => $birthDate,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
         }
+        
+        // Insert all users at once for better performance
+        DB::table('users')->insert($users);
     }
 }

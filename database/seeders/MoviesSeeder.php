@@ -32,6 +32,8 @@ class MoviesSeeder extends Seeder
             'True love', 'Dream chasers', 'Ship tragedy', 'Class romance', 'Train romance'
         ];
 
+        $ageRatings = ['0', '3', '6','10', '13', '16', '18'];
+
         for ($i = 0; $i < 200; $i++) {
             $movies[] = [
                 'title'       => $titles[$i % count($titles)] . ' #' . ($i + 1),
@@ -40,6 +42,7 @@ class MoviesSeeder extends Seeder
                 'genre_id'    => $genres->random()->id,
                 'price'       => rand(150, 400) / 100,
                 'stock'       => rand(1, 10),
+                'age_rating'  => $ageRatings[array_rand($ageRatings)],
                 'created_at'  => $now,
                 'updated_at'  => $now,
             ];

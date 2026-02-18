@@ -22,12 +22,55 @@ class MovieController extends Controller {
             $rentedMovieIds = auth()->user()->rentals()->where('returned', 0)->pluck('movie_id')->toArray();
         }
 
+        // Get suggestions - top rated movies from popular genres
+        $suggestions = $this->getMovieSuggestions();
+
         return Inertia::render('Movies/Index', [
             'movies' => $movies,
             'genres' => Genre::all(),
             'filters' => $request->only(['search', 'genre']),
             'rentedMovieIds' => $rentedMovieIds,
+            'suggestions' => $suggestions,
         ]);
+    }
+    
+    /**
+     * Get movie suggestions based on popular genres and ratings
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    protected function getMovieSuggestions() {
+        // Get top 3 most popular genres based on number of movies rented
+        $popularGenres = Genre::withCount(['movies' => function($query) {
+            $query->whereHas('rentals');
+        }])
+        ->orderBy('movies_count', 'desc')
+        ->take(3)
+        ->get();
+
+        if ($popularGenres->isEmpty()) {
+            // Fallback: get top rated movies from any genre
+            return Movie::with('genre')
+                ->withAvg('ratings', 'rating')
+                ->orderBy('ratings_avg_rating', 'desc')
+                ->take(4)
+                ->get();
+        }
+                
+        // Get top rated movies from popular genres
+        $suggestions = collect();
+        foreach ($popularGenres as $genre) {
+            $genreMovies = Movie::with('genre')
+                ->withAvg('ratings', 'rating')
+                ->where('genre_id', $genre->id)
+                ->orderBy('ratings_avg_rating', 'desc')
+                ->take(2)
+                ->get();
+            
+            $suggestions = $suggestions->merge($genreMovies);
+        }
+        
+        return $suggestions->take(4);
     }
 
     public function show(Movie $movie) {

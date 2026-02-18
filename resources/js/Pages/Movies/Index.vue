@@ -33,7 +33,7 @@
 
       <!-- Movies Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <div 
+        <MovieCard 
           v-for="movie in movies.data" 
           :key="movie.id"
           :movie="movie"
@@ -54,6 +54,7 @@
 import { Link, usePage, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import Pagination from '@/Components/Pagination.vue';
+import MovieCard from '@/Components/MovieCard.vue';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
@@ -63,6 +64,7 @@ const props = defineProps({
   genres: Array,
   filters: Object,
   rentedMovieIds: { type: Array, default: () => [] },
+  suggestions: { type: Array, default: () => [] },
 });
 
 const search = ref(props.filters.search || '');

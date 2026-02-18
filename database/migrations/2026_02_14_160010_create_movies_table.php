@@ -13,6 +13,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->integer('year');
             $table->foreignId('genre_id')->constrained()->onDelete('cascade');
+            $table->string('age_rating')->nullable();
             $table->decimal('price', 8, 2);
             $table->integer('stock')->default(1);
             $table->string('poster')->nullable();

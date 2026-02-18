@@ -34,6 +34,9 @@
                   <span class="px-4 py-2 bg-blue-100 text-blue-800 rounded-full">
                     {{ movie.genre.name }}
                   </span>
+                  <span v-if="movie.age_rating" class="px-4 py-2 bg-purple-100 text-purple-800 rounded-full font-semibold">
+                    {{ movie.age_rating + '+' }}
+                  </span>
                   <div class="flex items-center gap-2">
                     <span class="text-2xl text-yellow-500"><IconStar size="md" /></span>
                     <span class="font-bold text-gray-500">{{ formattedAvgRating }}</span>

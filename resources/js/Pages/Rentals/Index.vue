@@ -6,7 +6,10 @@
       <div v-if="localRentals.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div v-for="rental in localRentals" :key="rental.id" class="bg-white border rounded-lg shadow-md p-6">
         <h3 class="text-xl font-bold mb-2">{{ rental.movie.title }}</h3>
-        <p class="text-gray-600 mb-4">{{ rental.movie.genre.name }} • {{ rental.movie.year }}</p>
+        <p class="text-gray-600 mb-4">{{ rental.movie.genre.name }} • {{ rental.movie.year }}
+        <span v-if="rental.movie.age_rating" class="ml-2 px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-semibold">
+          {{ rental.movie.age_rating  + '+'}}
+        </span></p>
         
         <div class="space-y-2 mb-6">
           <div class="flex justify-between">

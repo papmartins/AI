@@ -41,7 +41,20 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'birth_date' => 'date',
     ];
+
+    /**
+     * Accessor for age (calculated from birth_date)
+     */
+    public function getAgeAttribute(): ?int
+    {
+        if (!$this->birth_date) {
+            return null;
+        }
+        
+        return $this->birth_date->age;
+    }
 
     public function wishlist() {
         return $this->hasMany(Wishlist::class);
@@ -51,6 +64,10 @@ class User extends Authenticatable
         return $this->hasMany(Rental::class);
     }
 
+    public function ratings() {
+        return $this->hasMany(Rating::class);
+    }
+    
     public function roleForMovie($movieId) {
         return Rating::where('user_id', $this->id)->where('movie_id', $movieId)->first();
     }

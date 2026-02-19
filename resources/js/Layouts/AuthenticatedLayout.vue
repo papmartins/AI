@@ -63,6 +63,9 @@ watch(
                                 <NavLink :href="route('rentals.index')" :active="route().current('rentals.*')">
                                     Rents
                                 </NavLink>
+                                <NavLink :href="route('recommendations.show')" :active="route().current('recommendations.*')">
+                                    Recommendations
+                                </NavLink>
                             </div>
                         </div>
 

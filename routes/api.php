@@ -27,3 +27,13 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::post('/iris/predict', [IrisController::class, 'predict']);
+
+// Movie Recommendation API
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/recommendations/personalized', [\App\Http\Controllers\RecommendationController::class, 'personalized']);
+    Route::get('/recommendations/popular', [\App\Http\Controllers\RecommendationController::class, 'popular']);
+    Route::post('/recommendations/retrain', [\App\Http\Controllers\RecommendationController::class, 'retrain']);
+});
+
+// Public recommendations endpoint (no auth required)
+Route::get('/recommendations/popular-public', [\App\Http\Controllers\RecommendationController::class, 'popular']);

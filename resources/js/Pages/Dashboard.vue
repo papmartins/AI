@@ -1,13 +1,18 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
+import MovieCard from '@/Components/MovieCard.vue';
+
+const props = defineProps({
+  recommendations: { type: Array, default: () => [] },
+  usingMLRecommendations: { type: Boolean, default: false }
+});
 </script>
 
 <template>
     <Head title="Dashboard" />
 
     <AuthenticatedLayout title="Dashboard">
-
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <!-- Recommended Movies Section -->

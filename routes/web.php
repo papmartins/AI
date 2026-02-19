@@ -29,9 +29,9 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -51,6 +51,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/rentals/{rental}', [RentalController::class, 'destroy'])->name('rentals.destroy');
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
     Route::post('/wishlist/{movie}/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+
+    
+Route::get('/recommendations', [\App\Http\Controllers\RecommendationController::class, 'show'])
+    ->name('recommendations.show');
 
 });
 require __DIR__.'/auth.php';

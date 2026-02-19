@@ -3,10 +3,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Movie;
 use App\Models\Rating;
+use App\Services\MovieRecommender;
 use Illuminate\Http\Request;
 
 class RatingController extends Controller
 {
+    public function __construct(protected MovieRecommender $recommender)
+    {
+    }
     public function store(Request $request, Movie $movie)
     {
         $validated = $request->validate([
@@ -36,6 +40,9 @@ class RatingController extends Controller
         // Load user relation before responding
         $rating->load('user');
 
+        // Clear cache for this user since their preferences changed
+        $this->recommender->clearUserCache($rating->user);
+
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json(['message' => $message, 'rating' => $rating]);
         }
@@ -50,6 +57,8 @@ class RatingController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
+        // Clear cache for this user before deleting
+        $this->recommender->clearUserCache($rating->user);
         $rating->delete();
 
         if (request()->wantsJson() || request()->ajax()) {

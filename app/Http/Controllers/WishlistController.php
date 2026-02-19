@@ -2,11 +2,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Movie;
+use App\Services\MovieRecommender;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class WishlistController extends Controller
 {
+    public function __construct(protected MovieRecommender $recommender)
+    {
+    }
     public function index()
     {
         $userId = auth()->id();
@@ -41,6 +45,9 @@ class WishlistController extends Controller
                 $wishlistRelation->create(['movie_id' => $movie->id]);
                 $message = 'Added to wishlist';
             }
+
+            // Clear cache for this user since their wishlist changed
+            $this->recommender->clearUserCache(auth()->user());
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json(['message' => $message]);

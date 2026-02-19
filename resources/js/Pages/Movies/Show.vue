@@ -4,15 +4,15 @@
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12">
     <!-- Back Button -->
     <div class="max-w-4xl mx-auto px-6">
-      <Link 
-        href="/movies" 
+      <button 
+        @click="goBack"
         class="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-medium mb-12 transition-colors"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
-        Back to Movies
-      </Link>
+        Back
+      </button>
     </div>
 
     <!-- Movie Details -->
@@ -90,7 +90,7 @@
           <div class="md:w-1/3 bg-gradient-to-b from-indigo-50 to-blue-50 p-12">
             <h3 class="text-2xl font-bold text-gray-900 mb-8">Ratings ({{ localRatings.length }})</h3>
             
-            <div v-if="localRatings.length" class="space-y-4 max-h-96 overflow-y-auto">
+            <div v-if="localRatings.length" class="space-y-4 max-h-48 overflow-y-auto">
               <div 
                 v-for="rating in localRatings.slice(0, 8)" 
                 :key="rating.id" 
@@ -193,6 +193,7 @@ import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { ref, computed } from 'vue';
 import IconStar from '@/Components/Icons/IconStar.vue';
+import MovieCard from '@/Components/MovieCard.vue';
 
 const page = usePage();
 const currentUserId = computed(() => page.props.auth?.user?.id);
@@ -207,6 +208,7 @@ const props = defineProps({
   isInWishlist: Boolean,
   isRented: Boolean,
   userRating: Number,
+  similarMovies: { type: Array, default: () => [] },
 });
 
 // local reactive state so buttons update immediately
@@ -307,6 +309,12 @@ const toggleWishlist = async (movieId) => {
     Inertia.reload();
   } catch (err) {
     alert(err.response?.data?.message || 'Error updating wishlist');
+  }
+};
+
+const goBack = () => {
+  if (typeof window !== 'undefined' && window.history) {
+    window.history.back();
   }
 };
 </script>

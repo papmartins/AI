@@ -16,7 +16,7 @@
           />
         </div>
       </div>
-
+      
       <!-- Filters -->
       <div class="mb-8 flex flex-wrap gap-4">
         <input 
@@ -31,6 +31,7 @@
         </select>
       </div>
 
+
       <!-- Movies Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <MovieCard 
@@ -42,10 +43,12 @@
           :score="Number(movie.avg_rating)?.toFixed(1)"
         />
       </div>
+
       <!-- Pagination -->
       <div class="mt-12 flex justify-center">
         <Pagination :links="movies.links" />
       </div>
+      
     </div>
   </AuthenticatedLayout>
 </template>

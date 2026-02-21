@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             UsersSeeder::class,
             MoviesSeeder::class,
             RatingsSeeder::class,
+            RentalsSeeder::class,
         ]);
         // \App\Models\User::factory(10)->create();
 

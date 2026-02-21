@@ -29,15 +29,37 @@ class MovieController extends Controller {
         }
 
         // Get suggestions using ML recommender if user is authenticated
+        $suggestions = [];
         if (auth()->check()) {
-            // $suggestions = $this->getMovieSuggestions()->toArray();
-            $suggestions = $this->recommender->recommendForUser(auth()->user(), 4);
-            $suggestions = array_map(function($item) { return $item['movie']; }, $suggestions);
+            try {
+                // $suggestions = $this->getMovieSuggestions()->toArray();
+                $mlRecommendations = $this->recommender->recommendForUser(auth()->user(), 4);
+                
+                // Debug: log recommendations
+                \Log::info('ML Recommendations for user ' . auth()->user()->id, [
+                    'count' => count($mlRecommendations),
+                    'recommendations' => array_map(function($item) {
+                        return ['movie_id' => $item['movie']->id, 'rating' => $item['predicted_rating']];
+                    }, $mlRecommendations)
+                ]);
+                
+                if (!empty($mlRecommendations)) {
+                    $suggestions = array_map(function($item) { return $item['movie']; }, $mlRecommendations);
+                }
+            } catch (\Exception $e) {
+                \Log::error('ML Recommendation failed: ' . $e->getMessage());
+                // Fallback to popular recommendations
+                $popularRecs = $this->recommender->getPopularRecommendations(4);
+                $suggestions = array_map(function($item) { return $item['movie']; }, $popularRecs);
+            }
         } else {
             // $suggestions = $this->getMovieSuggestions()->toArray();
             $suggestions = $this->recommender->getPopularRecommendations(4);
             $suggestions = array_map(function($item) { return $item['movie']; }, $suggestions);
         }
+        
+        // Debug: log final suggestions
+        \Log::info('Final suggestions', ['count' => count($suggestions)]);
 
         return Inertia::render('Movies/Index', [
             'movies' => $movies,

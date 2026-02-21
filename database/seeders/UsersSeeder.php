@@ -51,6 +51,51 @@ class UsersSeeder extends Seeder {
             ];
         }
         
+        // Add anomalous users for testing anomaly detection
+        // User 1: High rental frequency user (will rent many movies quickly)
+        $users[] = [
+            'name' => 'Rapid Renter',
+            'email' => 'rapid@email.com',
+            'password' => Hash::make('123'),
+            'gender' => 'M',
+            'birth_date' => '1985-03-22',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
+        
+        // User 2: Inconsistent rater (will give very variable ratings)
+        $users[] = [
+            'name' => 'Mood Swinger',
+            'email' => 'mood@email.com',
+            'password' => Hash::make('123'),
+            'gender' => 'F',
+            'birth_date' => '1992-07-14',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
+        
+        // User 3: Frequent late returner (will return movies late)
+        $users[] = [
+            'name' => 'Late Larry',
+            'email' => 'late@email.com',
+            'password' => Hash::make('123'),
+            'gender' => 'M',
+            'birth_date' => '1978-11-30',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
+        
+        // User 4: Suspicious activity (combination of all bad behaviors)
+        $users[] = [
+            'name' => 'Suspicious Sam',
+            'email' => 'suspicious@email.com',
+            'password' => Hash::make('123'),
+            'gender' => 'M',
+            'birth_date' => '1988-09-05',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
+        
         // Insert all users at once for better performance
         DB::table('users')->insert($users);
     }

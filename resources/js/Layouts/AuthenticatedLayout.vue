@@ -66,6 +66,12 @@ watch(
                                 <NavLink :href="route('recommendations.show')" :active="route().current('recommendations.*')">
                                     Recommendations
                                 </NavLink>
+                                <NavLink :href="route('anomaly.detection')" :active="route().current('anomaly.detection')">
+                                    🕵️‍♂️ Anomaly Detection
+                                </NavLink>
+                                <NavLink :href="route('model-training.index')" :active="route().current('model-training.*')">
+                                    🤖 Model Training
+                                </NavLink>
                             </div>
                         </div>
 

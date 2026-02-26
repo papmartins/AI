@@ -6,11 +6,14 @@ import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
+import MoviesMenu from '@/Components/MoviesMenu.vue';
+import LanguageSwitcher from '@/Components/LanguageSwitcher.vue';
 import { Link } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
 const page = usePage();
-const user = computed(() => page.props.value?.auth?.user ?? null);
+const user = computed(() => page.props.auth?.user ?? null);
+const locale = computed(() => page.props.locale ?? 'en');
 const props = defineProps({
     title: {
         type: String,
@@ -19,11 +22,11 @@ const props = defineProps({
 });
 
 // show flash success messages from server
-const flash = ref(page.props.value?.flash?.success ?? null);
+const flash = ref(page.props.flash?.success ?? null);
 
 // update flash when Inertia shared props change
 watch(
-    () => page.props.value,
+    () => page.props,
     (p) => {
         const val = p?.flash?.success ?? null;
         flash.value = val;
@@ -42,7 +45,7 @@ watch(
                         <div class="flex">
                             <!-- Logo -->
                             <div class="shrink-0 flex items-center">
-                                <Link :href="route('dashboard')">
+                                <Link :href="route('dashboard', { locale: locale || 'en' })">
                                     <ApplicationLogo
                                         class="block h-9 w-auto fill-current text-gray-800"
                                     />
@@ -51,31 +54,26 @@ watch(
 
                             <!-- Navigation Links -->
                             <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
-                                    Dashboard
+                                <NavLink :href="route('dashboard', { locale: locale || 'en' })" :active="route().current('dashboard')">
+                                    {{ trans('Dashboard') }}
                                 </NavLink>
-                                <NavLink :href="route('movies.index')" :active="route().current('movies.*')">
-                                    Movies
+                                
+                                <!-- Movies Menu (consolidated) -->
+                                <MoviesMenu />
+                                
+                                <NavLink :href="route('anomaly.detection', { locale: locale || 'en' })" :active="route().current('anomaly.detection')">
+                                    🕵️‍♂️ {{ trans('Anomaly Detection') }}
                                 </NavLink>
-                                <NavLink :href="route('wishlist.index')" :active="route().current('wishlist.*')">
-                                    Wishlist
-                                </NavLink>
-                                <NavLink :href="route('rentals.index')" :active="route().current('rentals.*')">
-                                    Rents
-                                </NavLink>
-                                <NavLink :href="route('recommendations.show')" :active="route().current('recommendations.*')">
-                                    Recommendations
-                                </NavLink>
-                                <NavLink :href="route('anomaly.detection')" :active="route().current('anomaly.detection')">
-                                    🕵️‍♂️ Anomaly Detection
-                                </NavLink>
-                                <NavLink :href="route('model-training.index')" :active="route().current('model-training.*')">
-                                    🤖 Model Training
+                                <NavLink :href="route('model-training.index', { locale: locale || 'en' })" :active="route().current('model-training.*')">
+                                    🤖 {{ trans('Model Training') }}
                                 </NavLink>
                             </div>
                         </div>
 
                         <div class="hidden sm:flex sm:items-center sm:ms-6">
+                            <!-- Language Switcher -->
+                            <LanguageSwitcher class="me-3" />
+                            
                             <!-- Settings Dropdown -->
                             <div class="ms-3 relative">
                                 <Dropdown align="right" width="48">
@@ -104,9 +102,9 @@ watch(
                                     </template>
 
                                     <template #content>
-                                        <DropdownLink :href="route('profile.edit')"> Profile </DropdownLink>
+                                        <DropdownLink :href="route('profile.edit', { locale: locale || 'en' })"> {{ trans('Profile') }} </DropdownLink>
                                         <DropdownLink :href="route('logout')" method="post" as="button">
-                                            Log Out
+                                            {{ trans('Log Out') }}
                                         </DropdownLink>
                                     </template>
                                 </Dropdown>
@@ -152,18 +150,26 @@ watch(
                     class="sm:hidden"
                 >
                     <div class="pt-2 pb-3 space-y-1">
-                        <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
-                            Dashboard
+                        <ResponsiveNavLink :href="route('dashboard', { locale: locale || 'en' })" :active="route().current('dashboard')">
+                            {{ trans('Dashboard') }}
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('movies.index')" :active="route().current('movies.*')">
-                            Filmes
+                        
+                        <!-- Mobile Movies Menu -->
+                        <div class="px-4">
+                            <MoviesMenu />
+                        </div>
+                        
+                        <ResponsiveNavLink :href="route('anomaly.detection', { locale: locale || 'en' })" :active="route().current('anomaly.detection')">
+                            🕵️‍♂️ {{ trans('Anomaly Detection') }}
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('wishlist.index')" :active="route().current('wishlist.*')">
-                            Wishlist
+                        <ResponsiveNavLink :href="route('model-training.index', { locale: locale || 'en' })" :active="route().current('model-training.*')">
+                            🤖 {{ trans('Model Training') }}
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('rentals.index')" :active="route().current('rentals.*')">
-                            Aluguéis
-                        </ResponsiveNavLink>
+                        
+                        <!-- Mobile Language Switcher -->
+                        <div class="px-4 py-2">
+                            <LanguageSwitcher />
+                        </div>
                     </div>
 
                     <!-- Responsive Settings Options -->
@@ -176,9 +182,9 @@ watch(
                         </div>
 
                         <div class="mt-3 space-y-1">
-                            <ResponsiveNavLink :href="route('profile.edit')"> Profile </ResponsiveNavLink>
+                            <ResponsiveNavLink :href="route('profile.edit', { locale: locale || 'en' })"> {{ trans('Profile') }} </ResponsiveNavLink>
                             <ResponsiveNavLink :href="route('logout')" method="post" as="button">
-                                Log Out
+                                {{ trans('Log Out') }}
                             </ResponsiveNavLink>
                         </div>
                     </div>

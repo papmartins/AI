@@ -4,6 +4,7 @@ import DeleteUserForm from './Partials/DeleteUserForm.vue';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm.vue';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm.vue';
 import { Head } from '@inertiajs/vue3';
+import { trans } from '@/Helpers/translation';
 
 defineProps({
     mustVerifyEmail: {
@@ -16,9 +17,9 @@ defineProps({
 </script>
 
 <template>
-    <Head title="Profile" />
+    <Head :title="trans('Profile')" />
 
-    <AuthenticatedLayout title="Profile">
+    <AuthenticatedLayout :title="trans('Profile')">
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">

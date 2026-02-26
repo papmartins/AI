@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between mb-2">
       <h3 class="text-xl font-bold line-clamp-2">{{ movie.title }} ({{ movie.year }})</h3>
       <div class="flex items-center gap-3">
-        <span v-if="rentedMovieIds.includes(movie.id)" class="text-sm text-green-600 font-semibold">Rented</span>
+        <span v-if="rentedMovieIds.includes(movie.id)" class="text-sm text-green-600 font-semibold">{{ trans('Rented') }}</span>
         <div v-if="avgRating !== null && avgRating !== undefined" class="flex items-center gap-1">
           <span class="text-yellow-500 font-bold">★</span>
           <span class="font-semibold text-sm">{{ formattedAvgRating }}</span>
@@ -17,7 +17,7 @@
     <p class="text-gray-600 mb-3 line-clamp-2">{{ movie.description }}</p>
     <div class="flex justify-between items-center mb-4">
       <span class="text-lg font-semibold text-green-600">${{ movie.price }}</span>
-      <span class="text-sm text-gray-500">Stock: {{ movie.stock }}</span>
+      <span class="text-sm text-gray-500">{{ trans('Stock') }}: {{ movie.stock }}</span>
     </div>
     <div class="flex justify-between items-center mb-4">
       <div class="flex gap-2">
@@ -32,7 +32,7 @@
         <div class="bg-indigo-600 h-2 rounded-full" :style="{ width: (confidence * 100) + '%' }"></div>
       </div>
       <p class="text-xs text-gray-500 mt-1 text-right">
-        {{ Math.round(confidence * 100) }}% confidence
+        {{ Math.round(confidence * 100) }}% {{ trans('confidence') }}
       </p>
     </div>
     <div>
@@ -40,7 +40,7 @@
         :href="`/movies/${movie.id}`"
         class="w-full block bg-indigo-600 text-white py-2 px-4 rounded-lg text-center hover:bg-indigo-700 transition-colors"
       >
-        View Details
+        {{ trans('View Details') }}
       </Link>
     </div>
   </div>

@@ -8,6 +8,7 @@ import SecondaryButton from '@/Components/SecondaryButton.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import Modal from '@/Components/Modal.vue';
+import { trans } from '@/Helpers/translation';
 
 const props = defineProps({
     anomalies: {
@@ -32,7 +33,7 @@ const retrainModel = async () => {
     showRetrainModal.value = false;
     
     try {
-        const response = await axios.post('/web/anomaly/retrain');
+        const response = await axios.post('/api/anomaly/retrain');
         alert('✅ Model retrained successfully! Time: ' + response.data.training_time + 's');
         window.location.reload();
     } catch (error) {
@@ -53,11 +54,11 @@ const checkSpecificUser = async () => {
     showUserModal.value = false;
     
     try {
-        const response = await axios.get('/web/admin/users-by-email?email=' + userEmail.value);
+        const response = await axios.get('/api/admin/users-by-email?email=' + userEmail.value);
         if (response.data.user) {
             selectedUserId.value = response.data.user.id;
             
-            const anomalyResponse = await axios.get('/web/anomaly/users/' + selectedUserId.value);
+            const anomalyResponse = await axios.get('/api/anomaly/users/' + selectedUserId.value);
             userAnomalyResult.value = anomalyResponse.data;
             showUserModal.value = true;
         } else {
@@ -75,7 +76,7 @@ const resolveAnomaly = async (anomalyId) => {
     if (confirm('Are you sure you want to mark this anomaly as resolved?')) {
         loading.value = true;
         try {
-            await axios.post('/web/anomaly/resolve/' + anomalyId);
+            await axios.post('/api/anomaly/resolve/' + anomalyId);
             alert('✅ Anomaly marked as resolved');
             window.location.reload();
         } catch (error) {
@@ -109,42 +110,36 @@ const getSeverityText = (severity) => {
 </script>
 
 <template>
-    <Head title="Anomaly Detection" />
+    <Head :title="trans('Anomaly Detection Dashboard')" />
     
-    <AuthenticatedLayout>
-        <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                🕵️‍♂️ Anomaly Detection Dashboard
-            </h2>
-        </template>
-
+    <AuthenticatedLayout  :title="trans('Anomaly Detection Dashboard')">
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <!-- Statistics Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Anomalies</div>
+                        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ trans('Total Anomalies') }}</div>
                         <div class="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                             {{ statistics.total_anomalies || '0' }}
                         </div>
                     </div>
                     
                     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Pending</div>
+                        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ trans('Pending') }}</div>
                         <div class="text-3xl font-bold text-yellow-600 dark:text-yellow-400 mt-2">
                             {{ statistics.pending_anomalies || '0' }}
                         </div>
                     </div>
                     
                     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Resolved</div>
+                        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ trans('Resolved') }}</div>
                         <div class="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">
                             {{ statistics.resolved_anomalies || '0' }}
                         </div>
                     </div>
                     
                     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Model Status</div>
+                        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ trans('Model Status') }}</div>
                         <div class="mt-2">
                             <span v-if="statistics.model_trained" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                 ✅ Trained
@@ -162,22 +157,22 @@ const getSeverityText = (severity) => {
                 <!-- Action Buttons -->
                 <div class="flex flex-wrap gap-4 mb-8">
                     <PrimaryButton @click="showRetrainModal = true" :disabled="loading">
-                        🔄 Retrain Model
+                        🔄 {{ trans('Retrain Model') }}
                     </PrimaryButton>
                     
                     <SecondaryButton @click="showUserModal = true">
-                        🔍 Check Specific User
+                        🔍 {{ trans('Check Specific User') }}
                     </SecondaryButton>
                     
                     <PrimaryButton @click="window.location.reload()" :disabled="loading">
-                        🔄 Refresh Data
+                        🔄 {{ trans('Refresh Data') }}
                     </PrimaryButton>
                 </div>
 
                 <!-- Anomaly Types Chart -->
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-8 p-6">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
-                        Anomaly Types Distribution
+                        {{ trans('Anomaly Types Distribution') }}
                     </h3>
                     <div v-if="statistics.anomaly_types && statistics.anomaly_types.length" class="space-y-3">
                         <div v-for="type in statistics.anomaly_types" :key="type.type" class="flex items-center justify-between">
@@ -203,7 +198,7 @@ const getSeverityText = (severity) => {
                         </div>
                     </div>
                     <div v-else class="text-gray-500 dark:text-gray-400">
-                        No anomaly types found
+                        {{ trans('No anomaly types found') }}
                     </div>
                 </div>
 
@@ -211,19 +206,19 @@ const getSeverityText = (severity) => {
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900 dark:text-gray-100">
                         <h3 class="text-lg font-medium mb-4">
-                            Detected Anomalies ({{ anomalies.length }})
+                            {{ trans('Detected Anomalies') }} ({{ anomalies.length }})
                         </h3>
                         
                         <div v-if="anomalies.length > 0" class="overflow-x-auto">
                             <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                                 <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                     <tr>
-                                        <th scope="col" class="px-6 py-3">User</th>
-                                        <th scope="col" class="px-6 py-3">Email</th>
-                                        <th scope="col" class="px-6 py-3">Score</th>
-                                        <th scope="col" class="px-6 py-3">Type</th>
-                                        <th scope="col" class="px-6 py-3">Severity</th>
-                                        <th scope="col" class="px-6 py-3">Actions</th>
+                                        <th scope="col" class="px-6 py-3">{{ trans('User') }}</th>
+                                        <th scope="col" class="px-6 py-3">{{ trans('Email') }}</th>
+                                        <th scope="col" class="px-6 py-3">{{ trans('Score') }}</th>
+                                        <th scope="col" class="px-6 py-3">{{ trans('Type') }}</th>
+                                        <th scope="col" class="px-6 py-3">{{ trans('Severity') }}</th>
+                                        <th scope="col" class="px-6 py-3">{{ trans('Actions') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -249,7 +244,7 @@ const getSeverityText = (severity) => {
                                         </td>
                                         <td class="px-6 py-4">
                                             <DangerButton @click="resolveAnomaly(anomaly.user_id)" size="sm">
-                                                ✅ Resolve
+                                                ✅ {{ trans('Resolve') }}
                                             </DangerButton>
                                         </td>
                                     </tr>
@@ -261,8 +256,8 @@ const getSeverityText = (severity) => {
                             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <p class="mt-2">No anomalies detected</p>
-                            <p class="text-sm mt-1">All users appear to have normal behavior patterns</p>
+                            <p class="mt-2">{{ trans('No anomalies detected') }}</p>
+                            <p class="text-sm mt-1">{{ trans('All users normal behavior') }}</p>
                         </div>
                     </div>
                 </div>
@@ -273,11 +268,11 @@ const getSeverityText = (severity) => {
         <Modal :show="showRetrainModal" @close="showRetrainModal = false">
             <div class="p-6">
                 <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
-                    🔄 Retrain Anomaly Detection Model
+                    🔄 {{ trans('Retrain Anomaly Detection Model') }}
                 </h2>
                 
                 <p class="text-gray-600 dark:text-gray-400 mb-4">
-                    Retraining the model will analyze current user behavior patterns and update the anomaly detection algorithm.
+                    {{ trans('Retrain model description') }}
                 </p>
                 
                 <p class="text-gray-600 dark:text-gray-400 mb-6">
@@ -306,18 +301,18 @@ const getSeverityText = (severity) => {
         <Modal :show="showUserModal" @close="showUserModal = false">
             <div class="p-6">
                 <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
-                    🔍 Check Specific User
+                    🔍 {{ trans('Check Specific User') }}
                 </h2>
                 
                 <div v-if="!userAnomalyResult">
                     <div class="mb-4">
-                        <InputLabel for="userEmail" value="User Email" />
+                        <InputLabel for="userEmail" :value="trans('User Email')" />
                         <TextInput 
                             id="userEmail" 
                             type="email" 
                             class="mt-1 block w-full" 
                             v-model="userEmail" 
-                            placeholder="user@example.com"
+                            :placeholder="trans('User Email')"
                         />
                     </div>
                     

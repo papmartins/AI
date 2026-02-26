@@ -36,13 +36,19 @@ class ModelTrainingController extends Controller
             $result = $recommender->retrain();
             $trainingTime = microtime(true) - $startTime;
 
-            // Store training time in session for the view
-            session(['recommendation_training_time' => $trainingTime]);
-
-            return back()->with('success', 'Movie recommendation model trained successfully in ' . round($trainingTime, 2) . ' seconds!');
+            return response()->json([
+                'success' => true,
+                'message' => 'Movie recommendation model trained successfully',
+                'training_time' => round($trainingTime, 2),
+                'result' => $result
+            ]);
         } catch (\Exception $e) {
             Log::error('Recommendation model training failed: ' . $e->getMessage());
-            return back()->with('error', 'Failed to train recommendation model: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to train recommendation model',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
@@ -56,13 +62,19 @@ class ModelTrainingController extends Controller
             $result = $detector->retrain();
             $trainingTime = microtime(true) - $startTime;
 
-            // Store training time in session for the view
-            session(['anomaly_training_time' => $trainingTime]);
-
-            return back()->with('success', 'Anomaly detection model trained successfully in ' . round($trainingTime, 2) . ' seconds!');
+            return response()->json([
+                'success' => true,
+                'message' => 'Anomaly detection model trained successfully',
+                'training_time' => round($trainingTime, 2),
+                'result' => $result
+            ]);
         } catch (\Exception $e) {
             Log::error('Anomaly detection model training failed: ' . $e->getMessage());
-            return back()->with('error', 'Failed to train anomaly detection model: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to train anomaly detection model',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
@@ -86,24 +98,33 @@ class ModelTrainingController extends Controller
 
             $totalTrainingTime = microtime(true) - $startTime;
 
-            // Store individual training times in session
-            session([
-                'movie_training_time' => $movieTrainingTime,
-                'anomaly_training_time' => $anomalyTrainingTime,
-                'total_training_time' => $totalTrainingTime
+            return response()->json([
+                'success' => true,
+                'message' => 'All models trained successfully',
+                'training_times' => [
+                    'movie' => round($movieTrainingTime, 2),
+                    'anomaly' => round($anomalyTrainingTime, 2),
+                    'total' => round($totalTrainingTime, 2)
+                ],
+                'results' => [
+                    'movie' => $movieResult,
+                    'anomaly' => $anomalyResult
+                ]
             ]);
-
-            return back()->with('success', 'All models trained successfully in ' . round($totalTrainingTime, 2) . ' seconds!');
         } catch (\Exception $e) {
             Log::error('Model training failed: ' . $e->getMessage());
-            return back()->with('error', 'Failed to train models: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to train models',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
     /**
      * Get model training status
      */
-    public function getTrainingStatus()
+    public function getTrainingStatus(Request $request)
     {
         $movieModelPath = storage_path('app/movie_recommender.model');
         $anomalyModelPath = storage_path('app/anomaly_detector.model');

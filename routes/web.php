@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MovieController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RentalController;
@@ -9,6 +10,11 @@ use App\Http\Controllers\UserController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+// Include test translations route for development
+if (file_exists(base_path('routes/test-translations.php'))) {
+    require base_path('routes/test-translations.php');
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -30,65 +36,52 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
-
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->prefix('{locale}')->where(['locale' => 'en|pt|es'])->group(function () {
+    // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
 
-    // Anomaly Detection Dashboard (Admin only)
+// ONLY path-based routes - no duplication
+Route::middleware(['auth', 'verified', 'locale'])->prefix('{locale}')->where(['locale' => 'en|pt|es'])->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
+
+    // Anomaly Detection
     Route::get('/anomaly-detection', function () {
         $detector = new \App\Services\AnomalyDetector();
         $anomalies = $detector->detectAnomalies();
         $statistics = $detector->getStatistics();
-        
         return Inertia::render('AnomalyDetection', [
             'anomalies' => $anomalies,
-            'statistics' => $statistics
+            'statistics' => $statistics,
         ]);
     })->name('anomaly.detection');
-    
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    
+
+    // Movies
     Route::get('/movies', [MovieController::class, 'index'])->name('movies.index');
     Route::get('/movies/{movie}', [MovieController::class, 'show'])->name('movies.show');
     Route::post('/movies/{movie}/rate', [RatingController::class, 'store'])->name('ratings.store');
-    Route::delete('/ratings/{rating}', [RatingController::class, 'destroy'])->name('ratings.destroy');
-    
+
+    // Rentals
     Route::get('/rentals', [RentalController::class, 'index'])->name('rentals.index');
     Route::post('/movies/{movie}/rent', [RentalController::class, 'store'])->name('rentals.store');
     Route::delete('/rentals/{rental}', [RentalController::class, 'destroy'])->name('rentals.destroy');
+
+    // Wishlist
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
     Route::post('/wishlist/{movie}/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
-    
+
+    // Recommendations
     Route::get('/recommendations', [\App\Http\Controllers\RecommendationController::class, 'show'])
         ->name('recommendations.show');
-    
-    Route::post('/web/anomaly/resolve/{anomalyId}', [\App\Http\Controllers\AnomalyController::class, 'resolve'])->name('web.anomaly.resolve');
-    Route::post('/web/anomaly/retrain', [\App\Http\Controllers\AnomalyController::class, 'retrain'])->name('web.anomaly.retrain');
-    Route::get('/web/anomaly/users/{userId}', [\App\Http\Controllers\AnomalyController::class, 'userAnomalies']);
-    
-    // Model Training Routes
-    Route::get('/model-training', [\App\Http\Controllers\ModelTrainingController::class, 'index'])->name('model-training.index');
-    Route::post('/model-training/train-recommendation', [\App\Http\Controllers\ModelTrainingController::class, 'trainRecommendationModel'])->name('model-training.train-recommendation');
-    Route::post('/model-training/train-anomaly', [\App\Http\Controllers\ModelTrainingController::class, 'trainAnomalyModel'])->name('model-training.train-anomaly');
-    Route::post('/model-training/train-all', [\App\Http\Controllers\ModelTrainingController::class, 'trainAllModels'])->name('model-training.train-all');
-    Route::get('/model-training/status', [\App\Http\Controllers\ModelTrainingController::class, 'getTrainingStatus'])->name('model-training.status');
 
-    Route::get('/web/users', [UserController::class, 'index'])->name('users.index');
-    Route::get('/web/users/{user}', [UserController::class, 'show'])->name('users.show');
-    
-    Route::get('/web/admin/users-by-email', function (\Illuminate\Http\Request $request) {
-        $user = \App\Models\User::where('email', $request->email)->first();
-        
-        if ($user) {
-            return response()->json(['user' => $user]);
-        } else {
-            return response()->json(['user' => null], 404);
-        }
-    });
+    // Model Training (only the index page - training endpoints moved to API)
+    Route::get('/model-training', [\App\Http\Controllers\ModelTrainingController::class, 'index'])
+        ->name('model-training.index');
 
 });
+
 require __DIR__.'/auth.php';

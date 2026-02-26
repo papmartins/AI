@@ -34,10 +34,33 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'locale' => app()->getLocale(),
+            'translations' => $this->loadTranslations(),
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
             ],
         ];
+    }
+    
+    /**
+     * Load translations for the current locale
+     *
+     * @return array
+     */
+    protected function loadTranslations(): array
+    {
+        $locale = app()->getLocale();
+        $translations = [];
+        
+        // Load translation files from the lang directory
+        $translationFiles = glob(resource_path("lang/{$locale}/*.php"));
+        
+        foreach ($translationFiles as $file) {
+            $filename = basename($file, '.php');
+            $translations[$filename] = include $file;
+        }
+        
+        return $translations;
     }
 }

@@ -71,4 +71,18 @@ class User extends Authenticatable
     public function roleForMovie($movieId) {
         return Rating::where('user_id', $this->id)->where('movie_id', $movieId)->first();
     }
+
+    /**
+     * Send the password reset notification.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        // Try to get the locale from the session or default to 'en'
+        $locale = session()->get('locale', 'en');
+        
+        $this->notify(new \App\Notifications\ResetPasswordNotification($token, $locale));
+    }
 }

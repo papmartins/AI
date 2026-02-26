@@ -34,7 +34,21 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+        // Check if there's an intended URL (where the user was trying to go before login)
+        $intendedUrl = session()->pull('url.intended', null);
+        
+        if ($intendedUrl) {
+            return redirect()->to($intendedUrl);
+        }
+        
+        // If no intended URL, redirect to the locale-prefixed dashboard
+        // Try to get the locale from the current request, default to 'en'
+        $locale = $request->segment(1);
+        if (!in_array($locale, ['en', 'pt', 'es'])) {
+            $locale = 'en';
+        }
+        
+        return redirect()->to("/{$locale}/dashboard");
     }
 
     /**

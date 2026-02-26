@@ -13,19 +13,19 @@
         
         <div class="space-y-2 mb-6">
           <div class="flex justify-between">
-            <span>Rented:</span>
+            <span>{{ trans('Rented') }}:</span>
             <span class="font-semibold">{{ rental.rented_at }}</span>
           </div>
           <div class="flex justify-between">
-            <span>Due:</span>
+            <span>{{ trans('Due') }}:</span>
             <span :class="rental.due_date < today ? 'text-red-500 font-bold' : 'text-green-600 font-semibold'">
               {{ rental.due_date }}
             </span>
           </div>
           <div class="flex justify-between">
-            <span>Status:</span>
+            <span>{{ trans('Status') }}:</span>
             <span :class="rental.returned ? 'text-green-600' : 'text-red-500'">
-              {{ rental.returned ? 'Returned' : 'Active' }}
+              {{ rental.returned ? trans('Returned') : trans('Active') }}
             </span>
           </div>
         </div>

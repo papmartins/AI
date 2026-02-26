@@ -1,13 +1,14 @@
 <template>
-    <AuthenticatedLayout title="My Wishlist">
+    <Head :title="trans('My Wishlist')" />
+    <AuthenticatedLayout :title="trans('My Wishlist')">
         <div class="max-w-7xl mx-auto p-6">
             <!-- Header -->
             <div class="flex justify-between items-center mb-12">
             <div>
-                <p class="text-xl text-gray-600">{{ wishlistMovies.length }} movies</p>
+                <p class="text-xl text-gray-600">{{ wishlistMovies.length }} {{ trans('movies') }}</p>
             </div>
             <Link href="/movies" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-colors">
-                Browse All Movies
+                {{ trans('Browse All Movies') }}
             </Link>
             </div>
 
@@ -18,10 +19,10 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h18l-2 12H5L3 3zM12 15a2 2 0 100-4 2 2 0 000 4z"/>
                 </svg>
             </div>
-            <h3 class="text-2xl font-semibold text-gray-900 mb-4">Your wishlist is empty</h3>
-            <p class="text-lg text-gray-600 mb-8">Save movies you want to rent later.</p>
+            <h3 class="text-2xl font-semibold text-gray-900 mb-4">{{ trans('Your wishlist is empty') }}</h3>
+            <p class="text-lg text-gray-600 mb-8">{{ trans('Save movies you want to rent later.') }}</p>
             <Link href="/movies" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all">
-                Start Browsing
+                {{ trans('Start Browsing') }}
             </Link>
             </div>
 
@@ -105,13 +106,14 @@
 </template>
 
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import { Inertia } from '@inertiajs/inertia';
 import axios from 'axios';
 import { computed, ref, watch } from 'vue';
 import Pagination from '@/Components/Pagination.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import IconStar from '@/Components/Icons/IconStar.vue';
+import { trans } from '@/Helpers/translation';
 
 const props = defineProps({
   movies: Object

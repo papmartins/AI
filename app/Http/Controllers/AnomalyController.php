@@ -66,7 +66,7 @@ class AnomalyController extends Controller
      */
     public function userAnomalies($userId, AnomalyDetector $detector)
     {
-        // $this->authorize('viewAnomalies', AnomalyDetection::class);
+        $this->authorize('viewAnomalies', AnomalyDetection::class);
         
         $user = \App\Models\User::find($userId);
         if (!$user) {

@@ -11,7 +11,7 @@
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
-        Back
+        {{ trans('Back') }}
       </button>
     </div>
 
@@ -52,11 +52,11 @@
               <div class="flex flex-wrap items-center gap-6 p-6 bg-gray-50 rounded-xl">
                 <div class="flex items-center gap-3">
                   <span class="text-4xl font-bold text-green-600">${{ movie.price }}</span>
-                  <span class="text-sm text-gray-500">per rental</span>
+                  <span class="text-sm text-gray-500">{{ trans('per rental') }}</span>
                 </div>
                 <div class="flex items-center gap-2">
                   <div class="w-6 h-6 bg-green-500 rounded-full"></div>
-                  <span class="font-semibold text-green-700">In Stock: {{ movie.stock }}</span>
+                  <span class="font-semibold text-green-700">{{ trans('In Stock') }}: {{ movie.stock }}</span>
                 </div>
               </div>
 
@@ -68,10 +68,10 @@
                     @click.prevent="rentMovie(movie.id)"
                     class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 px-8 rounded-xl font-semibold hover:shadow-lg"
                   >
-                    🎬 Rent Now - ${{ movie.price }}
+                    🎬 {{ trans('Rent Now') }} - ${{ movie.price }}
                   </button>
                   <div v-else class="w-full text-center py-4 px-8 rounded-xl bg-gray-100 text-gray-600 font-semibold">
-                    ✅ Already Rented
+                    ✅ {{ trans('Already Rented') }}
                   </div>
                 </div>
 
@@ -80,7 +80,7 @@
                   @click="toggleWishlist(movie.id)"
                   :class="localIsInWishlist ? 'px-8 py-4 bg-red-50 text-red-600 border border-red-200 rounded-xl font-semibold' : 'px-8 py-4 border-2 border-indigo-300 rounded-xl text-indigo-600 font-semibold hover:bg-indigo-50'"
                 >
-                  {{ localIsInWishlist ? '❤️ Remove' : '💖 Wishlist' }}
+                  {{ localIsInWishlist ? '❤️ ' + trans('Remove') : '💖 ' + trans('Wishlist') }}
                 </button>
               </div>
             </div>
@@ -88,7 +88,7 @@
 
           <!-- Right: Ratings -->
           <div class="md:w-1/3 bg-gradient-to-b from-indigo-50 to-blue-50 p-12">
-            <h3 class="text-2xl font-bold text-gray-900 mb-8">Ratings ({{ localRatings.length }})</h3>
+            <h3 class="text-2xl font-bold text-gray-900 mb-8">{{ trans('Ratings') }} ({{ localRatings.length }})</h3>
             
             <div v-if="localRatings.length" class="space-y-4 max-h-48 overflow-y-auto">
               <div 
@@ -108,13 +108,13 @@
             </div>
             
             <div v-else class="text-center py-12 text-gray-500">
-              <p>No ratings yet. Be the first!</p>
+              <p>{{ trans('No ratings yet. Be the first!') }}</p>
             </div>
 
             <!-- Rate Movie Form -->
             <div v-if="!localUserRating" class="mt-8 pt-8 border-t">
-              <h3 class="text-xl font-bold text-gray-900 mb-4">Your Rating</h3>
-              <p class="text-gray-600 mb-4">Rate this movie:</p>
+              <h3 class="text-xl font-bold text-gray-900 mb-4">{{ trans('Your Rating') }}</h3>
+              <p class="text-gray-600 mb-4">{{ trans('Rate this movie:') }}</p>
               <div class="flex gap-2 justify-center">
                 <button
                   v-for="n in 5"
@@ -130,7 +130,7 @@
 
             <!-- Your Rating Display & Edit -->
             <div v-else class="mt-8 pt-8 border-t">
-              <h3 class="text-xl font-bold text-gray-900 mb-4">Your Rating</h3>
+              <h3 class="text-xl font-bold text-gray-900 mb-4">{{ trans('Your Rating') }}</h3>
               <div v-if="!isEditing" class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <div class="flex">

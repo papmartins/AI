@@ -4,7 +4,7 @@ namespace App\Policies;
 
 use App\Models\User;
 
-class ModelPolicy
+class AnomalyDetectionPolicy
 {
     /**
      * Determine if the user can retrain models

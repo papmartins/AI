@@ -69,3 +69,28 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Public recommendations endpoint (no auth required)
 Route::get('/recommendations/popular-public', [\App\Http\Controllers\RecommendationController::class, 'popular']);
+
+// Model Training API (Sanctum authenticated)
+Route::middleware('auth:sanctum')->prefix('model-training')->group(function () {
+    Route::post('/train-recommendation', [\App\Http\Controllers\ModelTrainingController::class, 'trainRecommendationModel']);
+    Route::post('/train-anomaly', [\App\Http\Controllers\ModelTrainingController::class, 'trainAnomalyModel']);
+    Route::post('/train-all', [\App\Http\Controllers\ModelTrainingController::class, 'trainAllModels']);
+    Route::get('/status', [\App\Http\Controllers\ModelTrainingController::class, 'getTrainingStatus']);
+});
+
+Route::post('/login', function (Request $request) {
+    $input = json_decode($request->getContent(), true) ?: [];
+    
+    $credentials = validator($input, [  // ← validator() separado
+        'email' => 'required|email',
+        'password' => 'required',
+    ])->validate();
+
+    if (! Auth::attempt($credentials)) {
+        return response()->json(['message' => 'Credenciais inválidas'], 401);
+    }
+
+    // Remove esta linha que causa erro: $request->session()->regenerate();
+
+    return response()->json(['message' => 'Login OK']);
+});

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Services\MovieRecommender;
 use App\Services\AnomalyDetector;
+use App\Services\IntentClassifierService;
+use App\Services\TrainingTimeLogger;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
@@ -20,6 +22,7 @@ class ModelTrainingController extends Controller
             'training_times' => [
                 'recommendation' => session('recommendation_training_time'),
                 'anomaly' => session('anomaly_training_time'),
+                'chatbot' => session('chatbot_training_time'),
                 'movie' => session('movie_training_time'),
                 'total' => session('total_training_time')
             ]
@@ -29,12 +32,15 @@ class ModelTrainingController extends Controller
     /**
      * Train the movie recommendation model
      */
-    public function trainRecommendationModel(MovieRecommender $recommender)
+    public function trainRecommendationModel(MovieRecommender $recommender, TrainingTimeLogger $timeLogger)
     {
         try {
             $startTime = microtime(true);
             $result = $recommender->retrain();
             $trainingTime = microtime(true) - $startTime;
+
+            // Log training time persistently
+            $timeLogger->logTrainingTime('movie', round($trainingTime, 2));
 
             return response()->json([
                 'success' => true,
@@ -55,12 +61,15 @@ class ModelTrainingController extends Controller
     /**
      * Train the anomaly detection model
      */
-    public function trainAnomalyModel(AnomalyDetector $detector)
+    public function trainAnomalyModel(AnomalyDetector $detector, TrainingTimeLogger $timeLogger)
     {
         try {
             $startTime = microtime(true);
             $result = $detector->retrain();
             $trainingTime = microtime(true) - $startTime;
+
+            // Log training time persistently
+            $timeLogger->logTrainingTime('anomaly', round($trainingTime, 2));
 
             return response()->json([
                 'success' => true,
@@ -79,9 +88,38 @@ class ModelTrainingController extends Controller
     }
 
     /**
+     * Train the NLP chatbot model
+     */
+    public function trainChatbotModel(IntentClassifierService $intentClassifier, TrainingTimeLogger $timeLogger)
+    {
+        try {
+            $startTime = microtime(true);
+            $result = $intentClassifier->retrain();
+            $trainingTime = microtime(true) - $startTime;
+
+            // Log training time persistently
+            $timeLogger->logTrainingTime('chatbot', round($trainingTime, 2));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'NLP chatbot model trained successfully',
+                'training_time' => round($trainingTime, 2),
+                'result' => $result
+            ]);
+        } catch (\Exception $e) {
+            Log::error('NLP chatbot model training failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to train NLP chatbot model',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Train all models
      */
-    public function trainAllModels(MovieRecommender $movieRecommender, AnomalyDetector $anomalyDetector)
+    public function trainAllModels(MovieRecommender $movieRecommender, AnomalyDetector $anomalyDetector, IntentClassifierService $intentClassifier, TrainingTimeLogger $timeLogger)
     {
         try {
             $startTime = microtime(true);
@@ -96,7 +134,18 @@ class ModelTrainingController extends Controller
             $anomalyResult = $anomalyDetector->retrain();
             $anomalyTrainingTime = microtime(true) - $anomalyStart;
 
+            $chatbotStart = microtime(true);
+            // Train chatbot model
+            $chatbotResult = $intentClassifier->retrain();
+            $chatbotTrainingTime = microtime(true) - $chatbotStart;
+
             $totalTrainingTime = microtime(true) - $startTime;
+
+            // Log training times persistently
+            $timeLogger->logTrainingTime('movie', round($movieTrainingTime, 2));
+            $timeLogger->logTrainingTime('anomaly', round($anomalyTrainingTime, 2));
+            $timeLogger->logTrainingTime('chatbot', round($chatbotTrainingTime, 2));
+            $timeLogger->logTrainingTime('total', round($totalTrainingTime, 2));
 
             return response()->json([
                 'success' => true,
@@ -104,11 +153,13 @@ class ModelTrainingController extends Controller
                 'training_times' => [
                     'movie' => round($movieTrainingTime, 2),
                     'anomaly' => round($anomalyTrainingTime, 2),
+                    'chatbot' => round($chatbotTrainingTime, 2),
                     'total' => round($totalTrainingTime, 2)
                 ],
                 'results' => [
                     'movie' => $movieResult,
-                    'anomaly' => $anomalyResult
+                    'anomaly' => $anomalyResult,
+                    'chatbot' => $chatbotResult
                 ]
             ]);
         } catch (\Exception $e) {
@@ -124,28 +175,43 @@ class ModelTrainingController extends Controller
     /**
      * Get model training status
      */
-    public function getTrainingStatus(Request $request)
+    public function getTrainingStatus(Request $request, TrainingTimeLogger $timeLogger)
     {
         $movieModelPath = storage_path('app/movie_recommender.model');
         $anomalyModelPath = storage_path('app/anomaly_detector.model');
+        $chatbotModelPath = storage_path('app/nlp_intention_classifier.model');
 
         $movieModelExists = file_exists($movieModelPath);
         $anomalyModelExists = file_exists($anomalyModelPath);
+        $chatbotModelExists = file_exists($chatbotModelPath);
 
         $movieModelSize = $movieModelExists ? filesize($movieModelPath) : 0;
         $anomalyModelSize = $anomalyModelExists ? filesize($anomalyModelPath) : 0;
+        $chatbotModelSize = $chatbotModelExists ? filesize($chatbotModelPath) : 0;
+
+        // Get persistent training times
+        $trainingTimes = $timeLogger->getTrainingTimes();
 
         return response()->json([
             'movie_model' => [
                 'exists' => $movieModelExists,
                 'size' => $movieModelSize,
-                'last_modified' => $movieModelExists ? filemtime($movieModelPath) : null
+                'last_modified' => $movieModelExists ? filemtime($movieModelPath) : null,
+                'last_training_time' => $trainingTimes['movie'] ?? null
             ],
             'anomaly_model' => [
                 'exists' => $anomalyModelExists,
                 'size' => $anomalyModelSize,
-                'last_modified' => $anomalyModelExists ? filemtime($anomalyModelPath) : null
-            ]
+                'last_modified' => $anomalyModelExists ? filemtime($anomalyModelPath) : null,
+                'last_training_time' => $trainingTimes['anomaly'] ?? null
+            ],
+            'chatbot_model' => [
+                'exists' => $chatbotModelExists,
+                'size' => $chatbotModelSize,
+                'last_modified' => $chatbotModelExists ? filemtime($chatbotModelPath) : null,
+                'last_training_time' => $trainingTimes['chatbot'] ?? null
+            ],
+            'total_training_time' => $trainingTimes['total'] ?? null
         ]);
     }
 }

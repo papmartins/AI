@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Movie extends Model {
 use HasFactory;
-    protected $fillable = ['title', 'description', 'year', 'genre_id', 'price', 'stock', 'poster', 'age_rating'];
+    protected $fillable = ['title', 'description', 'year', 'genre_id', 'price', 'stock', 'poster', 'age_rating', 'cast', 'director'];
     
     protected $casts = ['price' => 'decimal:2'];
     

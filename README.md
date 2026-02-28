@@ -9,12 +9,13 @@
 
 ## About This Project
 
-This Laravel application implements multiple machine learning systems:
+This Laravel application implements multiple machine learning systems and an advanced AI chatbot:
 
 1. **Iris Flower Classification System** - Classifies iris flowers into species using Naive Bayes
 2. **Movie Recommendation System** - Provides personalized movie recommendations using KNN regression
 3. **Anomaly Detection System** - Identifies anomalous user behavior using Isolation Forest
-4. **Model Training Center** - Centralized interface for training and monitoring all ML models
+4. **AI Movie Chatbot** - Natural language processing system for movie queries in multiple languages
+5. **Model Training Center** - Centralized interface for training and monitoring all ML models
 
 ## Algorithm Guide
 
@@ -55,7 +56,24 @@ All systems are built with Rubix ML and integrated into a Laravel web applicatio
   - Historical analysis
 - **Use Case**: Fraud detection, unusual behavior identification
 
-#### 4. Model Training Center
+#### 4. AI Movie Chatbot
+- **Technology**: Natural Language Processing with Intent Classification
+- **Input**: Natural language questions about movies
+- **Output**: Contextually relevant answers and movie information
+- **Features**:
+  - **Multilingual Support**: Portuguese, English, Spanish
+  - **Intent Recognition**: 7 different question types (actor, director, genre, year, rating, title, recommendations)
+  - **Compound Questions**: Handles complex queries combining multiple criteria
+  - **Entity Extraction**: Accurate extraction of names, years, and genres
+  - **Context Awareness**: Maintains conversation context for follow-up questions
+  - **Response Formatting**: Professional, language-appropriate responses
+- **Supported Question Types**:
+  - Simple: "What movies have Tom Hanks?"
+  - Compound: "Show me action movies with Brad Pitt from 2010"
+  - Complex: "What movies have Tom Hanks as actor and Steven Spielberg as director?"
+- **Use Case**: Intelligent movie search and discovery
+
+#### 5. Model Training Center
 - **Purpose**: Centralized interface for all ML model management
 - **Features**:
   - Real-time training status monitoring

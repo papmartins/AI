@@ -111,7 +111,7 @@ class MovieController extends Controller {
         return $suggestions->take(4);
     }
 
-    public function show(Movie $movie) {
+    public function show(String $locale, Movie $movie) {
         $movie->load(['genre', 'ratings.user', 'userRating']);
         $isInWishlist = false;
         $isRented = false;

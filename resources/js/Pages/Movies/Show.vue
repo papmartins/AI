@@ -48,6 +48,18 @@
               <!-- Description -->
               <p class="text-xl text-gray-700 leading-relaxed">{{ movie.description }}</p>
 
+              <!-- Cast and Director -->
+              <div v-if="movie.cast || movie.director" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                <div v-if="movie.director" class="bg-gray-50 p-6 rounded-xl">
+                  <h3 class="text-lg font-bold text-gray-900 mb-3">🎬 {{ trans('Director') }}</h3>
+                  <p class="text-gray-700">{{ movie.director }}</p>
+                </div>
+                <div v-if="movie.cast" class="bg-gray-50 p-6 rounded-xl">
+                  <h3 class="text-lg font-bold text-gray-900 mb-3">👥 {{ trans('Cast') }}</h3>
+                  <p class="text-gray-700">{{ movie.cast }}</p>
+                </div>
+              </div>
+
               <!-- Price & Stock -->
               <div class="flex flex-wrap items-center gap-6 p-6 bg-gray-50 rounded-xl">
                 <div class="flex items-center gap-3">
@@ -202,6 +214,8 @@ const formattedAvgRating = computed(() => {
   return Number(props.avgRating)?.toFixed(1) || 'N/A';
 });
 
+const locale = page.props.locale || 'en';
+
 const props = defineProps({
   movie: Object,
   avgRating: Number,
@@ -251,7 +265,7 @@ const getRatingStars = (ratingValue) => {
 
 const submitRating = async (movieId, rating) => {
   try {
-    const res = await axios.post(`/movies/${movieId}/rate`, { rating });
+    const res = await axios.post(`/${locale}/movies/${movieId}/rate`, { rating });
     alert(res.data?.message || 'Rating saved');
     localUserRating.value = rating;
     selectedRating.value = rating;
@@ -276,7 +290,7 @@ const submitRating = async (movieId, rating) => {
 const deleteRating = async (ratingId) => {
   if (!confirm('Delete your rating?')) return;
   try {
-    await axios.delete(`/ratings/${ratingId}`);
+    await axios.delete(`/${locale}/movies/${ratingId}/rate`);
     alert('Rating deleted');
     localUserRating.value = null;
     selectedRating.value = 0;
@@ -290,7 +304,7 @@ const deleteRating = async (ratingId) => {
 
 const rentMovie = async (movieId) => {
   try {
-    const res = await axios.post(`/movies/${movieId}/rent`);
+    const res = await axios.post(`/${locale}/movies/${movieId}/rent`);
     alert(res.data?.message || 'Movie rented');
     // update local state immediately to reflect button change
     localIsRented.value = true;

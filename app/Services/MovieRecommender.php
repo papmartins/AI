@@ -30,10 +30,10 @@ class MovieRecommender
     
     public function __construct()
     {
-        $this->modelPath = storage_path('app/movie_recommender.model');
-        $this->datasetPath = storage_path('app/movie_recommendations.csv');
-        $this->metadataPath = storage_path('app/movie_metadata.json');
-        $this->confidenceCachePath = storage_path('app/popularity_confidence.json');
+        $this->modelPath = storage_path(config('ml.movie_recommender.model_path', 'app/movie_recommender.model'));
+        $this->datasetPath = storage_path(config('ml.movie_recommender.dataset_path', 'app/movie_recommendations.csv'));
+        $this->metadataPath = storage_path(config('ml.movie_recommender.metadata_path', 'app/movie_metadata.json'));
+        $this->confidenceCachePath = storage_path(config('ml.movie_recommender.confidence_cache_path', 'app/popularity_confidence.json'));
     }
     
     /**

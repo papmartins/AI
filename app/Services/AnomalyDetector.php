@@ -20,8 +20,8 @@ class AnomalyDetector
 
     public function __construct()
     {
-        $this->modelPath = storage_path('app/anomaly_detector.model');
-        $this->datasetPath = storage_path('app/anomaly_dataset.csv');
+        $this->modelPath = storage_path(config('ml.anomaly_detector.model_path', 'app/anomaly_detector.model'));
+        $this->datasetPath = storage_path(config('ml.anomaly_detector.dataset_path', 'app/anomaly_dataset.csv'));
     }
 
     /**

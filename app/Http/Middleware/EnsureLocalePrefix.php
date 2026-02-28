@@ -39,6 +39,7 @@ class EnsureLocalePrefix
             'ignition.updateConfig',
             'api/*',
             'sanctum/*',
+            'movies/*',  // Exclude movie routes from locale prefix redirection
         ];
         
         // Check if this is an excluded route

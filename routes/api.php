@@ -74,8 +74,20 @@ Route::get('/recommendations/popular-public', [\App\Http\Controllers\Recommendat
 Route::middleware('auth:sanctum')->prefix('model-training')->group(function () {
     Route::post('/train-recommendation', [\App\Http\Controllers\ModelTrainingController::class, 'trainRecommendationModel']);
     Route::post('/train-anomaly', [\App\Http\Controllers\ModelTrainingController::class, 'trainAnomalyModel']);
+    Route::post('/train-chatbot', [\App\Http\Controllers\ModelTrainingController::class, 'trainChatbotModel']);
     Route::post('/train-all', [\App\Http\Controllers\ModelTrainingController::class, 'trainAllModels']);
     Route::get('/status', [\App\Http\Controllers\ModelTrainingController::class, 'getTrainingStatus']);
+});
+
+Route::middleware(['auth:sanctum', 'locale'])->prefix('nlp-chatbot')->group(function () {
+    // NLP Chatbot API endpoints
+    Route::post('/chat', [\App\Http\Controllers\NLPChatbotController::class, 'chat']);
+    Route::get('/suggestions', [\App\Http\Controllers\NLPChatbotController::class, 'getSuggestions']);
+    
+    // Model training endpoints
+    Route::get('/check-model', [\App\Http\Controllers\NLPChatbotController::class, 'checkModel']);
+    Route::delete('/delete-model', [\App\Http\Controllers\NLPChatbotController::class, 'deleteModel']);
+    Route::post('/train', [\App\Http\Controllers\NLPChatbotController::class, 'train']);
 });
 
 Route::post('/login', function (Request $request) {

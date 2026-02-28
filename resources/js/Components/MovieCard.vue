@@ -37,7 +37,7 @@
     </div>
     <div>
       <Link
-        :href="`/movies/${movie.id}`"
+        :href="`/${locale}/movies/${movie.id}`"
         class="w-full block bg-indigo-600 text-white py-2 px-4 rounded-lg text-center hover:bg-indigo-700 transition-colors"
       >
         {{ trans('View Details') }}
@@ -47,9 +47,9 @@
 </template>
 
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-
+const { locale } = usePage().props;
 const props = defineProps({
   movie: {
     type: Object,

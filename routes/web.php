@@ -64,6 +64,7 @@ Route::middleware(['auth', 'verified', 'locale'])->prefix('{locale}')->where(['l
     Route::get('/movies', [MovieController::class, 'index'])->name('movies.index');
     Route::get('/movies/{movie}', [MovieController::class, 'show'])->name('movies.show');
     Route::post('/movies/{movie}/rate', [RatingController::class, 'store'])->name('ratings.store');
+    Route::delete('/movies/{rating}/rate', [RatingController::class, 'destroy'])->name('ratings.destroy');
 
     // Rentals
     Route::get('/rentals', [RentalController::class, 'index'])->name('rentals.index');
@@ -81,6 +82,9 @@ Route::middleware(['auth', 'verified', 'locale'])->prefix('{locale}')->where(['l
     // Model Training (only the index page - training endpoints moved to API)
     Route::get('/model-training', [\App\Http\Controllers\ModelTrainingController::class, 'index'])
         ->name('model-training.index');
+
+    // Chatbot route
+    Route::get('/chatbot', [\App\Http\Controllers\ChatbotController::class, 'index'])->name('chatbot');
 
 });
 

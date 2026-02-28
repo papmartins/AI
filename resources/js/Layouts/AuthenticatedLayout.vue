@@ -67,6 +67,9 @@ watch(
                                 <NavLink :href="route('model-training.index', { locale: locale || 'en' })" :active="route().current('model-training.*')">
                                     🤖 {{ trans('Model Training') }}
                                 </NavLink>
+                                <NavLink :href="route('chatbot', { locale: locale || 'en' })" :active="route().current('chatbot')">
+                                    💬 {{ trans('Chatbot') }}
+                                </NavLink>
                             </div>
                         </div>
 

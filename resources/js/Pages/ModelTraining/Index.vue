@@ -5,11 +5,7 @@ import { ref, onMounted } from 'vue';
 import { trans } from '@/Helpers/translation';
 
 const props = defineProps({
-    status: String,
-    training_times: {
-        type: Object,
-        default: () => ({})
-    }
+    status: String
 });
 
 const apiRequest = async (url, options = {}) => {
@@ -41,7 +37,8 @@ const apiRequest = async (url, options = {}) => {
 
 const trainingStatus = ref({
     movie_model: { exists: false, size: 0, last_modified: null },
-    anomaly_model: { exists: false, size: 0, last_modified: null }
+    anomaly_model: { exists: false, size: 0, last_modified: null },
+    chatbot_model: { exists: false, size: 0, last_modified: null }
 });
 
 const isTraining = ref(false);
@@ -67,8 +64,14 @@ const fetchTrainingStatus = () => {
         if (data && typeof data === 'object') {
             trainingStatus.value = {
                 movie_model: data.movie_model || { exists: false, size: 0, last_modified: null },
-                anomaly_model: data.anomaly_model || { exists: false, size: 0, last_modified: null }
+                anomaly_model: data.anomaly_model || { exists: false, size: 0, last_modified: null },
+                chatbot_model: data.chatbot_model || { exists: false, size: 0, last_modified: null }
             };
+            
+            // Update total training time from API response
+            if (data.total_training_time) {
+                trainingStatus.value.total_training_time = data.total_training_time;
+            }
         }
     })
     .catch(error => {
@@ -103,15 +106,8 @@ const trainRecommendationModel = async () => {
         if (data.success) {
             // Show success message
             if (typeof window !== 'undefined' && window.Inertia) {
-                window.Inertia.visit(window.location.href, {
-                    method: 'get',
-                    data: {
-                        status: 'success',
-                        recommendation_training_time: data.training_time
-                    },
-                    preserveState: true,
-                    preserveScroll: true
-                });
+                // Reload the page to get updated session data
+                window.location.reload();
             }
         } else {
             throw new Error(data.message || 'Training failed');
@@ -152,15 +148,47 @@ const trainAnomalyModel = async () => {
         if (response.ok && data.success) {
             // Show success message
             if (typeof window !== 'undefined' && window.Inertia) {
-                window.Inertia.visit(window.location.href, {
-                    method: 'get',
-                    data: {
-                        status: 'success',
-                        anomaly_training_time: data.training_time
-                    },
-                    preserveState: true,
-                    preserveScroll: true
-                });
+                // Reload the page to get updated session data
+                window.location.reload();
+            }
+        } else {
+            throw new Error(data.message || 'Training failed');
+        }
+    } catch (error) {
+        console.error('Training error:', error);
+        if (typeof window !== 'undefined' && window.Inertia) {
+            window.Inertia.visit(window.location.href, {
+                method: 'get',
+                data: { status: 'error' },
+                preserveState: true,
+                preserveScroll: true
+            });
+        }
+    } finally {
+        isTraining.value = false;
+        fetchTrainingStatus();
+    }
+};
+
+const trainChatbotModel = async () => {
+    isTraining.value = true;
+    trainingProgress.value = trans('Training chatbot model...');
+    
+    try {
+        const response = await apiRequest('/api/model-training/train-chatbot', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            // Show success message
+            if (typeof window !== 'undefined' && window.Inertia) {
+                // Reload the page to get updated session data
+                window.location.reload();
             }
         } else {
             throw new Error(data.message || 'Training failed');
@@ -198,17 +226,8 @@ const trainAllModels = async () => {
         if (response.ok && data.success) {
             // Show success message with all training times
             if (typeof window !== 'undefined' && window.Inertia) {
-                window.Inertia.visit(window.location.href, {
-                    method: 'get',
-                    data: {
-                        status: 'success',
-                        movie_training_time: data.training_times.movie,
-                        anomaly_training_time: data.training_times.anomaly,
-                        total_training_time: data.training_times.total
-                    },
-                    preserveState: true,
-                    preserveScroll: true
-                });
+                // Reload the page to get updated session data
+                window.location.reload();
             }
         } else {
             throw new Error(data.message || 'Training failed');
@@ -262,7 +281,7 @@ const formatFileSize = (bytes) => {
                         <div class="mb-8">
                             <h3 class="text-lg font-medium text-gray-900 mb-4">{{ trans('Model Training Status') }}</h3>
                             
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <!-- Movie Recommendation Model -->
                                 <div class="bg-gray-50 p-4 rounded-lg">
                                     <h4 class="font-medium text-gray-800 mb-2">{{ trans('Movie Recommendation Model') }}</h4>
@@ -280,6 +299,10 @@ const formatFileSize = (bytes) => {
                                         <div>
                                             <span class="font-medium">{{ trans('Last Trained:') }}</span>
                                             <span>{{ formatDate(trainingStatus.movie_model.last_modified) }}</span>
+                                        </div>
+                                        <div v-if="trainingStatus.movie_model.last_training_time">
+                                            <span class="font-medium">{{ trans('Last Training Time:') }}</span>
+                                            <span class="text-green-700 font-mono">{{ trainingStatus.movie_model.last_training_time.toFixed(2) }} {{ trans('seconds') }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -302,33 +325,47 @@ const formatFileSize = (bytes) => {
                                             <span class="font-medium">{{ trans('Last Trained:') }}</span>
                                             <span>{{ formatDate(trainingStatus.anomaly_model.last_modified) }}</span>
                                         </div>
+                                        <div v-if="trainingStatus.anomaly_model.last_training_time">
+                                            <span class="font-medium">{{ trans('Last Training Time:') }}</span>
+                                            <span class="text-green-700 font-mono">{{ trainingStatus.anomaly_model.last_training_time.toFixed(2) }} {{ trans('seconds') }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Chatbot Model -->
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <h4 class="font-medium text-gray-800 mb-2">{{ trans('Chatbot Model') }}</h4>
+                                    <div class="space-y-2 text-sm">
+                                        <div>
+                                            <span class="font-medium">{{ trans('Status:') }}</span>
+                                            <span :class="trainingStatus.chatbot_model.exists ? 'text-green-600' : 'text-red-600'">
+                                                {{ trainingStatus.chatbot_model.exists ? trans('Trained') : trans('Not Trained') }}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span class="font-medium">{{ trans('Size:') }}</span>
+                                            <span>{{ formatFileSize(trainingStatus.chatbot_model.size) }}</span>
+                                        </div>
+                                        <div>
+                                            <span class="font-medium">{{ trans('Last Trained:') }}</span>
+                                            <span>{{ formatDate(trainingStatus.chatbot_model.last_modified) }}</span>
+                                        </div>
+                                        <div v-if="trainingStatus.chatbot_model.last_training_time">
+                                            <span class="font-medium">{{ trans('Last Training Time:') }}</span>
+                                            <span class="text-green-700 font-mono">{{ trainingStatus.chatbot_model.last_training_time.toFixed(2) }} {{ trans('seconds') }}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Training Times Display -->
-                        <div v-if="Object.keys(training_times).length > 0" class="mb-8">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">{{ trans('Last Training Times') }}</h3>
-                            
+                        <!-- Total Training Time Display -->
+                        <div v-if="trainingStatus.total_training_time" class="mb-8">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">{{ trans('Total Training Time') }}</h3>
                             <div class="bg-green-50 p-4 rounded-lg">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                    <div v-if="training_times.recommendation" class="flex justify-between">
-                                        <span class="font-medium">{{ trans('Recommendation Model:') }}</span>
-                                        <span class="text-green-700 font-mono">{{ training_times.recommendation.toFixed(2) }} {{ trans('seconds') }}</span>
-                                    </div>
-                                    <div v-if="training_times.anomaly" class="flex justify-between">
-                                        <span class="font-medium">{{ trans('Anomaly Detection Model:') }}</span>
-                                        <span class="text-green-700 font-mono">{{ training_times.anomaly.toFixed(2) }} {{ trans('seconds') }}</span>
-                                    </div>
-                                    <div v-if="training_times.movie" class="flex justify-between">
-                                        <span class="font-medium">{{ trans('Movie Model:') }}</span>
-                                        <span class="text-green-700 font-mono">{{ training_times.movie.toFixed(2) }} {{ trans('seconds') }}</span>
-                                    </div>
-                                    <div v-if="training_times.total" class="flex justify-between">
-                                        <span class="font-medium">{{ trans('Total Training Time:') }}</span>
-                                        <span class="text-green-700 font-mono font-bold">{{ training_times.total.toFixed(2) }} {{ trans('seconds') }}</span>
-                                    </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="font-medium">{{ trans('Total Training Time:') }}</span>
+                                    <span class="text-green-700 font-mono font-bold text-lg">{{ trainingStatus.total_training_time.toFixed(2) }} {{ trans('seconds') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -350,7 +387,7 @@ const formatFileSize = (bytes) => {
                                 </div>
 
                                 <!-- Training buttons -->
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     <button 
                                         @click="trainRecommendationModel"
                                         :disabled="isTraining"
@@ -365,6 +402,14 @@ const formatFileSize = (bytes) => {
                                         class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {{ trans('Train Anomaly Detection Model') }}
+                                    </button>
+
+                                    <button 
+                                        @click="trainChatbotModel"
+                                        :disabled="isTraining"
+                                        class="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {{ trans('Train Chatbot Model') }}
                                     </button>
 
                                     <button 

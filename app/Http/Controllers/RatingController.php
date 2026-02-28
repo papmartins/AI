@@ -11,7 +11,7 @@ class RatingController extends Controller
     public function __construct(protected MovieRecommender $recommender)
     {
     }
-    public function store(Request $request, Movie $movie)
+    public function store(Request $request, String $locale, Movie $movie)
     {
         $validated = $request->validate([
             'rating' => 'required|integer|min:1|max:5',
@@ -50,7 +50,7 @@ class RatingController extends Controller
         return back()->with('success', $message);
     }
 
-    public function destroy(Rating $rating)
+    public function destroy(String $locale, Rating $rating)
     {
         // Ensure user can only delete their own rating
         if ($rating->user_id !== auth()->id()) {

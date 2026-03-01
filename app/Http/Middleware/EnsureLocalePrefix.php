@@ -22,17 +22,16 @@ class EnsureLocalePrefix
             // 'login',
             // 'register', 
             'logout',
-            'profile.edit',
-            'profile.update',
-            'profile.destroy',
-            'password.request',
-            'password.email',
-            'password.reset',
+            'verify-email',
+            'confirm-password',
+            'forgot-password',
+            'reset-password',
             'password.update',
             'verification.notice',
             'verification.verify',
             'verification.send',
             'password.confirm',
+            'password.update',
             'sanctum.csrf-cookie',
             'ignition.healthCheck',
             'ignition.executeSolution',
@@ -45,7 +44,9 @@ class EnsureLocalePrefix
         // Check if this is an excluded route
         $isExcluded = false;
         foreach ($excludedRoutes as $route) {
-            if ($request->is($route)) {
+            if ($request->is($route) ||
+                str_starts_with($request->path(), $route . '/') ||
+                $request->route()->getName() === $route) {
                 $isExcluded = true;
                 break;
             }
@@ -56,9 +57,9 @@ class EnsureLocalePrefix
             $firstSegment = $request->segment(1);
             $supportedLocales = ['en', 'pt', 'es'];
             
-            // Check if the URL is just "/" (root)
+            // Check if the URL is just "/" (root) - allow welcome page to load
             if ($request->is('/')) {
-                return redirect()->to('/en/dashboard');
+                return $next($request); // Allow root route to proceed normally
             }
             // Check if the first segment is NOT a supported locale
             // This handles cases where the route exists but doesn't have locale prefix

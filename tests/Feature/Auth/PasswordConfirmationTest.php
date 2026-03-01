@@ -10,6 +10,14 @@ class PasswordConfirmationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected string $locale;
+    
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->locale = config('app.locale');
+    }
+
     public function test_confirm_password_screen_can_be_rendered(): void
     {
         $user = User::factory()->create();

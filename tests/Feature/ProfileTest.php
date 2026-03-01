@@ -10,13 +10,20 @@ class ProfileTest extends TestCase
 {
     use RefreshDatabase;
 
+    private string $locale;
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->locale = config('app.locale');
+    }
+
     public function test_profile_page_is_displayed(): void
     {
         $user = User::factory()->create();
 
         $response = $this
             ->actingAs($user)
-            ->get('/profile');
+            ->get('/'.$this->locale.'/profile');
 
         $response->assertOk();
     }
@@ -27,14 +34,14 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->patch('/profile', [
+            ->patch('/'.$this->locale.'/profile', [
                 'name' => 'Test User',
                 'email' => 'test@example.com',
             ]);
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+            ->assertRedirect('/'.$this->locale.'/profile');
 
         $user->refresh();
 
@@ -49,14 +56,14 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->patch('/profile', [
+            ->patch('/'.$this->locale.'/profile', [
                 'name' => 'Test User',
                 'email' => $user->email,
             ]);
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+            ->assertRedirect('/'.$this->locale.'/profile');
 
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
@@ -67,7 +74,7 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->delete('/profile', [
+            ->delete('/'.$this->locale.'/profile', [
                 'password' => 'password',
             ]);
 
@@ -85,14 +92,14 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->from('/profile')
-            ->delete('/profile', [
+            ->from('/'.$this->locale.'/profile')
+            ->delete('/'.$this->locale.'/profile', [
                 'password' => 'wrong-password',
             ]);
 
         $response
             ->assertSessionHasErrors('password')
-            ->assertRedirect('/profile');
+            ->assertRedirect('/'.$this->locale.'/profile');
 
         $this->assertNotNull($user->fresh());
     }

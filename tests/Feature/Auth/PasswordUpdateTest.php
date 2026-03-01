@@ -11,13 +11,20 @@ class PasswordUpdateTest extends TestCase
 {
     use RefreshDatabase;
 
+    private string $locale;
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->locale = config('app.locale');
+    }
+
     public function test_password_can_be_updated(): void
     {
         $user = User::factory()->create();
 
         $response = $this
             ->actingAs($user)
-            ->from('/profile')
+            ->from('/'.$this->locale.'/profile')
             ->put('/password', [
                 'current_password' => 'password',
                 'password' => 'new-password',
@@ -26,7 +33,7 @@ class PasswordUpdateTest extends TestCase
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+            ->assertRedirect('/'.$this->locale.'/profile');
 
         $this->assertTrue(Hash::check('new-password', $user->refresh()->password));
     }
@@ -37,7 +44,7 @@ class PasswordUpdateTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->from('/profile')
+            ->from('/'.$this->locale.'/profile')
             ->put('/password', [
                 'current_password' => 'wrong-password',
                 'password' => 'new-password',
@@ -46,6 +53,6 @@ class PasswordUpdateTest extends TestCase
 
         $response
             ->assertSessionHasErrors('current_password')
-            ->assertRedirect('/profile');
+            ->assertRedirect('/'.$this->locale.'/profile');
     }
 }

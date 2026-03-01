@@ -16,8 +16,8 @@ class IrisClassifier
 
     public function __construct()
     {
-        $this->modelPath   = storage_path(config('ml.iris.model_path', 'app/iris.model'));
-        $this->datasetPath = storage_path(config('ml.iris.dataset_path', 'app/iris.csv'));
+        $this->modelPath   = storage_path(config('ml.iris.model_path') ?? 'app/iris.model');
+        $this->datasetPath = storage_path(config('ml.iris.dataset_path') ?? 'app/iris.csv');
     }
 
     protected function train(): PersistentModel

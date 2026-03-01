@@ -18,6 +18,17 @@ class RouteServiceProvider extends ServiceProvider
      * @var string
      */
     public const HOME = '/dashboard';
+    
+    /**
+     * Get the localized home route path.
+     *
+     * @return string
+     */
+    public static function homeWithLocale(): string
+    {
+        $locale = config('app.locale', 'en');
+        return '/' . $locale . '/dashboard';
+    }
 
     /**
      * Define your route model bindings, pattern filters, and other route configuration.

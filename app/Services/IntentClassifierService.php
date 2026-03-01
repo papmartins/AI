@@ -25,7 +25,7 @@ class IntentClassifierService
     public function __construct()
     {
         $this->tokenizer = new Word();
-        $this->modelPath = storage_path(config('ml.nlp.model_path', 'app/nlp_intention_classifier.model'));
+        $this->modelPath = storage_path(config('ml.nlp.model_path') ?? 'app/nlp_intention_classifier.model');
         $this->supportedLanguages = config('ml.nlp.supported_languages', ['pt', 'en', 'es']);
         $this->featureKeywordsCache = [];
         $this->trainingSamplesCache = [];

@@ -49,9 +49,9 @@ class MLServicesConfigTest extends TestCase
     {
         // Override config values
         config([
-            'nlp.iris.model_path' => 'custom/iris_custom.model',
-            'nlp.movie_recommender.model_path' => 'custom/recommender_custom.model',
-            'nlp.anomaly_detector.model_path' => 'custom/anomaly_custom.model',
+            'ml.iris.model_path' => 'custom/iris_custom.model',
+            'ml.movie_recommender.model_path' => 'custom/recommender_custom.model',
+            'ml.anomaly_detector.model_path' => 'custom/anomaly_custom.model',
         ]);
         
         // Test that services use custom config values
@@ -72,7 +72,7 @@ class MLServicesConfigTest extends TestCase
     public function test_fallback_to_default_values()
     {
         // Set config to null to test fallback
-        config(['nlp.iris.model_path' => null]);
+        config(['ml.iris.model_path' => null]);
         
         $irisService = new IrisClassifier();
         $irisModelPath = $this->getPrivateProperty($irisService, 'modelPath');

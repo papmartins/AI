@@ -36,7 +36,7 @@ Route::get('/', function () {
     ]);
 });
 
-Route::middleware(['auth', 'verified'])->prefix('{locale}')->where(['locale' => 'en|pt|es'])->group(function () {
+Route::middleware(['auth', 'verified', 'locale'])->prefix('{locale}')->where(['locale' => 'en|pt|es'])->group(function () {
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

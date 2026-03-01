@@ -16,6 +16,11 @@ class Authenticate extends Middleware
             return null;
         }
 
+        // Check if the request is for an API route (should not redirect)
+        if ($request->is('api/*')) {
+            return null;
+        }
+
         // Check if the request is for a locale-prefixed route
         $locale = $request->segment(1);
         $supportedLocales = ['en', 'pt', 'es'];
@@ -25,7 +30,7 @@ class Authenticate extends Middleware
             return route('login', ['locale' => $locale]);
         }
         
-        // Fallback to the non-prefixed login route
-        return route('login');
+        // Fallback to the default locale for non-API routes
+        return route('login', ['locale' => 'en']);
     }
 }

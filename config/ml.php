@@ -2,6 +2,11 @@
 
 return [
     /**
+     * Global Model Path Configuration
+     */
+    'model_path' => env('ML_MODEL_PATH', 'app/ml.model'),
+    
+    /**
      * NLP Model Configuration
      */
     'nlp' => [

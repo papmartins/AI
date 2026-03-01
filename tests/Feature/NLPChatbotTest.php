@@ -29,7 +29,7 @@ class NLPChatbotTest extends TestCase
     public function test_model_path_can_be_customized_via_env()
     {
         // Override the environment variable for testing
-        config(['nlp.npl.model_path' => 'custom/custom_model.model']);
+        config(['ml.nlp.model_path' => 'custom/custom_model.model']);
         
         $service = new IntentClassifierService();
         $modelPath = $service->getModelPath();
@@ -63,7 +63,6 @@ class NLPChatbotTest extends TestCase
         // Access the protected property using reflection
         $reflection = new \ReflectionClass($service);
         $property = $reflection->getProperty('supportedCompoundIntents');
-        $property->setAccessible(true);
         $compoundIntents = $property->getValue($service);
         
         $this->assertIsArray($compoundIntents);
@@ -96,12 +95,22 @@ class NLPChatbotTest extends TestCase
     public function test_config_fallback_values()
     {
         // Test that fallback values work when config is missing
+        // Save original config
+        $originalConfig = config('ml.nlp.model_path');
+        
+        // Set config to null to test fallback
         config(['ml.nlp.model_path' => null]);
         
         $service = new IntentClassifierService();
         $modelPath = $service->getModelPath();
         
+        // Debug: output the actual path
+        \Log::info('Model path in fallback test: ' . $modelPath);
+        
         // Should fall back to default value
         $this->assertStringContainsString('nlp_intention_classifier.model', $modelPath);
+        
+        // Restore original config
+        config(['ml.nlp.model_path' => $originalConfig]);
     }
 }

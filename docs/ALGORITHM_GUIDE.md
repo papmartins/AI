@@ -281,10 +281,10 @@ Output:
 **Template Structure**:
 ```php
 // Portuguese template
-'compound_actor_director_found' => 'Encontrei filmes com :actor dirigidos por :director:\n:list'
+'compound_actor_director_found' => 'Encontrei filmes com :actor dirigidos por :director:<br>:list'
 
 // English template  
-'compound_actor_director_found' => 'I found movies with :actor directed by :director:\n:list'
+'compound_actor_director_found' => 'I found movies with :actor directed by :director:<br>:list'
 ```
 
 ### Language Detection Algorithm

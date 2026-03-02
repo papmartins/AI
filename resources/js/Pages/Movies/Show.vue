@@ -316,7 +316,7 @@ const rentMovie = async (movieId) => {
 
 const toggleWishlist = async (movieId) => {
   try {
-    const res = await axios.post(`/wishlist/${movieId}/toggle`);
+    const res = await axios.post(`/${locale}/wishlist/${movieId}/toggle`);
     alert(res.data?.message || 'Wishlist updated');
     // toggle local state immediately
     localIsInWishlist.value = !localIsInWishlist.value;

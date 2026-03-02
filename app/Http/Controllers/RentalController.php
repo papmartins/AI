@@ -24,7 +24,7 @@ class RentalController extends Controller
         ]);
     }
 
-    public function store(Request $request, Movie $movie)
+    public function store(Request $request, String $locale, Movie $movie)
     {
         $rental = Rental::create([
             'user_id' => auth()->id(),
@@ -44,7 +44,7 @@ class RentalController extends Controller
         return redirect()->back()->with('success', $message);
     }
 
-    public function destroy(Rental $rental)
+    public function destroy(String $locale, Rental $rental)
     {
         // Ensure the rental belongs to the authenticated user
         if ($rental->user_id !== auth()->id()) {

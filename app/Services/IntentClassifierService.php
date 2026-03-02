@@ -115,6 +115,10 @@ class IntentClassifierService
             $featureVector = $this->generateFeatureVector($question, $language);
             $dataset = new Labeled([$featureVector], ['temp']);
             
+            if ($this->intentionClassifier === null) {
+                $this->loadOrTrainIntentionClassifier();
+            }
+            
             $intention = $this->intentionClassifier->predict($dataset);
             return $intention[0] ?? 'unknown';
         } catch (\Exception $e) {
@@ -157,7 +161,8 @@ class IntentClassifierService
             in_array($keywords['director'][1] ?? 'directed', $tokens) ||
             str_contains($lowerQuestion, 'directed by') ||
             str_contains($lowerQuestion, 'dirigidos por') ||
-            str_contains($lowerQuestion, 'dirigido por');
+            str_contains($lowerQuestion, 'dirigido por') ||
+            str_contains($lowerQuestion, 'dirigidas por');
         
         // If we have multiple person names and one of them is a known director,
         // or if the question structure suggests actor+director
@@ -367,62 +372,141 @@ class IntentClassifierService
     {
         $tokens = $this->tokenizer->tokenize(strtolower($question));
         
-        $portugueseWords = ['que', 'quais', 'filmes', 'o', 'a', 'do', 'da', 'com', 'por', 'ator', 'diretor', 'título', 'gênero', 'ano'];
-        $englishWords = ['what', 'which', 'who', 'the', 'movies', 'with', 'by', 'actor', 'director', 'title', 'genre', 'year'];
-        $spanishWords = ['qué', 'cuáles', 'películas', 'el', 'la', 'de', 'con', 'por', 'actor', 'director', 'título', 'género', 'año'];
+        // Load language detection words from language files
+        $portugueseWords = $this->getLanguageDetectionWords('pt');
+        $englishWords = $this->getLanguageDetectionWords('en');
+        $spanishWords = $this->getLanguageDetectionWords('es');
         
         $ptCount = count(array_intersect($tokens, $portugueseWords));
         $enCount = count(array_intersect($tokens, $englishWords));
         $esCount = count(array_intersect($tokens, $spanishWords));
+        
+        // Debug: log the language detection results
+        // Log::info("Language detection: PT={$ptCount}, EN={$enCount}, ES={$esCount} for question: {$question}");
         
         if ($ptCount > $enCount && $ptCount > $esCount) return 'pt';
         if ($esCount > $ptCount && $esCount > $enCount) return 'es';
         return 'en'; // Default to English
     }
     
+    protected function getLanguageDetectionWords(string $language): array
+    {
+        $filePath = resource_path("lang/{$language}/chatbot/language_detection.php");
+        
+        if (file_exists($filePath)) {
+            $languageData = include $filePath;
+            // Combine all word categories for comprehensive language detection
+            $allWords = [];
+            foreach ($languageData as $category) {
+                if (is_array($category)) {
+                    $allWords = array_merge($allWords, $category);
+                }
+            }
+            return $allWords;
+        }
+        
+        // Fallback to basic words if language file doesn't exist
+        return [];
+    }
+    
     protected function classifyIntentionFallback(array $tokens, string $question): string
     {
         $lowerQuestion = strtolower($question);
         
-        // Check for actor-related keywords
-        if (str_contains($lowerQuestion, 'star') || str_contains($lowerQuestion, 'actor') || 
-            str_contains($lowerQuestion, 'actress') || str_contains($lowerQuestion, 'cast') ||
-            str_contains($lowerQuestion, 'have ') || str_contains($lowerQuestion, 'with ')) {
+        // Check for actor-related keywords (English and Portuguese)
+        // Be more specific to avoid false positives
+        $actorKeywords = ['star', 'actor', 'actress', 'cast', 'ator', 'protagonizados', 'protagonizadas', 'estrelou'];
+        $actorPhrases = ['have ', 'with ', 'com '];
+        
+        $hasActorKeyword = false;
+        foreach ($actorKeywords as $keyword) {
+            if (str_contains($lowerQuestion, $keyword)) {
+                $hasActorKeyword = true;
+                break;
+            }
+        }
+        
+        $hasActorPhrase = false;
+        foreach ($actorPhrases as $phrase) {
+            if (str_contains($lowerQuestion, $phrase)) {
+                $hasActorPhrase = true;
+                break;
+            }
+        }
+        
+        // Only classify as actor if we have both a keyword and a phrase, or specific actor terms
+        if (($hasActorKeyword && $hasActorPhrase) || 
+            str_contains($lowerQuestion, 'protagonizados') || 
+            str_contains($lowerQuestion, 'protagonizadas') || 
+            str_contains($lowerQuestion, 'estrelou')) {
             return 'actor';
         }
         
-        // Check for director-related keywords
-        if (str_contains($lowerQuestion, 'direct') || str_contains($lowerQuestion, 'directed by')) {
+        // Check for director-related keywords (English and Portuguese)
+        // Be more specific to avoid false positives
+        $directorKeywords = ['direct', 'diretor', 'realizador', 'dirigiu', 'dirigidos', 'dirigidas'];
+        $directorPhrases = ['directed by', 'dirigido por', 'dirigidos por', 'dirigidas por'];
+        
+        $hasDirectorKeyword = false;
+        foreach ($directorKeywords as $keyword) {
+            if (str_contains($lowerQuestion, $keyword)) {
+                $hasDirectorKeyword = true;
+                break;
+            }
+        }
+        
+        $hasDirectorPhrase = false;
+        foreach ($directorPhrases as $phrase) {
+            if (str_contains($lowerQuestion, $phrase)) {
+                $hasDirectorPhrase = true;
+                break;
+            }
+        }
+        
+        // Only classify as director if we have both a keyword and a phrase, or specific director terms
+        if (($hasDirectorKeyword && $hasDirectorPhrase) || 
+            str_contains($lowerQuestion, 'directed by') ||
+            str_contains($lowerQuestion, 'dirigido por') ||
+            str_contains($lowerQuestion, 'dirigidos por') ||
+            str_contains($lowerQuestion, 'dirigidas por')) {
             return 'director';
         }
         
-        // Check for genre-related keywords
+        // Check for genre-related keywords (English and Portuguese)
         if (str_contains($lowerQuestion, 'genre') || str_contains($lowerQuestion, 'action') ||
             str_contains($lowerQuestion, 'comedy') || str_contains($lowerQuestion, 'horror') ||
-            str_contains($lowerQuestion, 'drama') || str_contains($lowerQuestion, 'romance')) {
+            str_contains($lowerQuestion, 'drama') || str_contains($lowerQuestion, 'romance') ||
+            str_contains($lowerQuestion, 'gênero') || str_contains($lowerQuestion, 'ação') ||
+            str_contains($lowerQuestion, 'comédia') || str_contains($lowerQuestion, 'terror')) {
             return 'genre';
         }
         
-        // Check for year-related keywords
+        // Check for year-related keywords (English and Portuguese)
         if (preg_match('/\d{4}/', $lowerQuestion) || str_contains($lowerQuestion, 'year') ||
-            str_contains($lowerQuestion, 'from ') || str_contains($lowerQuestion, 'released')) {
+            str_contains($lowerQuestion, 'from ') || str_contains($lowerQuestion, 'released') ||
+            str_contains($lowerQuestion, 'ano') || str_contains($lowerQuestion, 'lançados')) {
             return 'year';
         }
         
-        // Check for rating-related keywords
+        // Check for rating-related keywords (English and Portuguese)
         if (str_contains($lowerQuestion, 'rate') || str_contains($lowerQuestion, 'good') ||
-            str_contains($lowerQuestion, 'high') || str_contains($lowerQuestion, 'best')) {
+            str_contains($lowerQuestion, 'high') || str_contains($lowerQuestion, 'best') ||
+            str_contains($lowerQuestion, 'avaliados') || str_contains($lowerQuestion, 'boa') ||
+            str_contains($lowerQuestion, 'bom')) {
             return 'rating';
         }
         
-        // Check for title-related keywords
-        if (str_contains($lowerQuestion, 'title') || str_contains($lowerQuestion, 'name')) {
+        // Check for title-related keywords (English and Portuguese)
+        if (str_contains($lowerQuestion, 'title') || str_contains($lowerQuestion, 'name') ||
+            str_contains($lowerQuestion, 'título')) {
             return 'title';
         }
         
-        // Check for recommendation-related keywords
+        // Check for recommendation-related keywords (English and Portuguese)
         if (str_contains($lowerQuestion, 'recommend') || str_contains($lowerQuestion, 'suggest') ||
-            str_contains($lowerQuestion, 'popular') || str_contains($lowerQuestion, 'good movies')) {
+            str_contains($lowerQuestion, 'popular') || str_contains($lowerQuestion, 'good movies') ||
+            str_contains($lowerQuestion, 'recomenda') || str_contains($lowerQuestion, 'sugere') ||
+            str_contains($lowerQuestion, 'populares')) {
             return 'recommendation';
         }
         

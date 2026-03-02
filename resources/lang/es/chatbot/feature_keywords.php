@@ -4,12 +4,15 @@ return [
     'actor' => [
         'actor',
         'protagonizó',
-        'reparto'
+        'reparto',
+        'protagonizadas',
+        'protagonizados'
     ],
     'director' => [
         'director',
         'dirigió',
-        'dirigido por'
+        'dirigido por',
+        'dirigidas'
     ],
     'title' => [
         'título'

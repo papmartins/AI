@@ -3,18 +3,17 @@
 return [
     'actor' => [
         'quién protagonizó en la película',
-        'qué películas tienen el actor',
         'quién actuó en la película',
         'películas con el actor',
         'qué películas tienen el actor',
         'qué películas presentan al actor',
         'películas protagonizadas por el actor',
+        'películas protagonizadas por ',
         'películas con el actor en ellas',
-        'qué películas tienen',
-        'qué películas protagonizan',
-        'muestra películas con',
-        'películas con',
-        'películas protagonizadas por'
+        'qué películas protagonizan el actor',
+        'muestra películas protagonizadas por el actor',
+        'películas protagonizadas por el actor',
+        'películas con actuación del actor'
     ],
     'director' => [
         'quién dirigió la película',
@@ -29,12 +28,20 @@ return [
         'buscar películas por título'
     ],
     'recommendation' => [
-        'recomendar películas',
+        'recomendar películas para mí',
         'qué películas recomiendas',
+        'sugerir películas populares para mí',
+        'recomendar películas',
+        'sugerir películas',
+        'qué películas recomiendas para mí',
+        'qué películas debo ver recomendaciones',
+        'qué debería ver recomendaciones',
+        'películas que debería ver recomendaciones',
+        'recomienda algo para ver',
         'sugerir películas populares',
-        'recomendar películas',
-        'qué películas recomiendas',
-        'sugerir películas populares'
+        'qué ver recomendaciones',
+        'buenas películas para ver recomendaciones',
+        'películas para ver recomendaciones'
     ],
     'genre' => [
         'películas de acción',

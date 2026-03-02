@@ -1,359 +1,364 @@
-# Chatbot System Documentation
+# AI Movie Chatbot System Architecture
 
 ## Overview
 
-The AI Movie Chatbot is a natural language processing system that allows users to ask questions about movies in multiple languages (Portuguese, English, Spanish). The system can handle various types of questions including simple queries about actors, directors, genres, years, and ratings, as well as complex compound questions combining multiple criteria.
+This document provides a comprehensive overview of the AI Movie Chatbot system architecture, focusing on the language-agnostic design, component interactions, and key features.
 
-## Architecture
+## System Components
 
-### Core Components
+### 1. Core Services
 
-1. **NLPChatbotService** - Main service that orchestrates the chatbot functionality
-2. **IntentClassifierService** - Classifies user intents and detects compound questions
-3. **EntityExtractorService** - Extracts entities (names, years, genres) from questions
-4. **MovieRecommender** - Provides movie recommendations
+#### IntentClassifierService
+**Responsibility**: Classifies user intents (actor, director, genre, etc.)
 
-### Data Flow
+**Key Features**:
+- Language-agnostic intent classification
+- ML model with rule-based fallback
+- Compound question detection
+- Dynamic pattern loading from language files
 
+**Methods**:
+- `classifyIntention()`: Main classification method
+- `classifyMultipleIntents()`: Handles compound questions
+- `getDirectorPatterns()`: Loads director patterns
+- `getCompoundIndicators()`: Loads AND/OR indicators
+
+#### EntityExtractorService
+**Responsibility**: Extracts entities (titles, names, genres) from questions
+
+**Key Features**:
+- Language-agnostic entity extraction
+- Trigger word-based extraction
+- Stop word filtering
+- Title pattern matching
+
+**Methods**:
+- `extractPersonName()`: Extracts actor/director names
+- `extractTitleKeywords()`: Extracts movie titles
+- `extractGenreKeywords()`: Extracts genre keywords
+- `getTriggerWords()`: Loads trigger words
+- `getStopWords()`: Loads stop words
+- `getTitlePatterns()`: Loads title patterns
+- `getGenreKeywords()`: Loads genre keywords
+
+#### NLPChatbotService
+**Responsibility**: Main chatbot orchestration and response generation
+
+**Key Features**:
+- User question processing
+- Intent-based response routing
+- Conversation context management
+- Multi-language support
+
+**Methods**:
+- `processQuestion()`: Main entry point
+- `handleSingleIntentQuestion()`: Single intent handling
+- `handleCompoundQuestion()`: Compound intent handling
+- `getCompoundIndicators()`: Loads AND/OR indicators
+
+### 2. Language System
+
+#### Language Files Structure
 ```
-User Question → Intent Classification → Entity Extraction → Database Query → Response Formatting → User
+resources/lang/
+├── en/chatbot/
+│   ├── feature_keywords.php      # Intent keywords
+│   ├── trigger_words.php         # Entity triggers
+│   ├── stop_words.php            # Stop words
+│   ├── compound_indicators.php   # AND/OR indicators
+│   ├── title_patterns.php        # Title patterns
+│   └── genre_keywords.php        # Genre keywords
+├── pt/chatbot/
+│   ├── feature_keywords.php      # Portuguese equivalents
+│   ├── trigger_words.php         # Portuguese triggers
+│   ├── stop_words.php            # Portuguese stop words
+│   ├── compound_indicators.php   # Portuguese AND/OR
+│   ├── title_patterns.php        # Portuguese title patterns
+│   └── genre_keywords.php        # Portuguese genres
+└── es/chatbot/
+    ├── feature_keywords.php      # Spanish equivalents
+    ├── trigger_words.php         # Spanish triggers
+    ├── stop_words.php            # Spanish stop words
+    ├── compound_indicators.php   # Spanish AND/OR
+    ├── title_patterns.php        # Spanish title patterns
+    └── genre_keywords.php        # Spanish genres
 ```
 
-## Features
-
-### Supported Question Types
-
-#### Single Intent Questions
-- **Actor**: "What movies have Tom Hanks?"
-- **Director**: "Who directed Inception?"
-- **Genre**: "Show me action movies"
-- **Year**: "Movies from 2023"
-- **Rating**: "Highly rated films"
-- **Title**: "Movies with Matrix in the title"
-- **Recommendation**: "Recommend some movies"
-
-#### Compound Questions
-- **Actor + Director**: "What movies have Tom Hanks and Steven Spielberg?"
-- **Actor + Genre**: "Show me action movies with Brad Pitt"
-- **Director + Year**: "Movies from 2023 directed by Christopher Nolan"
-- **Actor + Director (Portuguese)**: "Que filmes existem com o realizador George Miller e o ator Charlize Theron"
-
-### Language Support
-
-- **Portuguese (PT)** - Full support
-- **English (EN)** - Full support  
-- **Spanish (ES)** - Full support
-
-## Implementation Details
-
-### Intent Classification
-
-The system uses a combination of machine learning and rule-based approaches:
-
-1. **ML Classifier**: Trained on labeled training samples for each language
-2. **Fallback Rules**: Keyword-based classification when ML confidence is low
-3. **Compound Detection**: Identifies questions with multiple intents using connecting words ("and", "e", "y", "or", "ou")
-
-### Entity Extraction
-
-The entity extractor identifies:
-- **Person Names**: Uses proper noun detection and context analysis
-- **Years**: Regex patterns for 4-digit years and decade references
-- **Genres**: Keyword matching against genre lists
-- **Titles**: Extracts potential title keywords from questions
-
-### Response Formatting
-
-Responses use Laravel's translation system with:
-- **Language-specific templates** in `resources/lang/*/chatbot/responses.php`
-- **Parameter replacement** using `:param` syntax
-- **Proper formatting** with newlines and bullet points
-
-## Technical Implementation
-
-### Training Data
-
-Training samples are defined in:
-- `resources/lang/pt/chatbot/training_samples.php`
-- `resources/lang/en/chatbot/training_samples.php`
-- `resources/lang/es/chatbot/training_samples.php`
-
-Each file contains examples for all supported intents.
-
-### Feature Keywords
-
-Intent-specific keywords are defined in:
-- `resources/lang/pt/chatbot/feature_keywords.php`
-- `resources/lang/en/chatbot/feature_keywords.php`
-- `resources/lang/es/chatbot/feature_keywords.php`
-
-### Response Templates
-
-Response templates are defined in:
-- `resources/lang/pt/chatbot/responses.php`
-- `resources/lang/en/chatbot/responses.php`
-- `resources/lang/es/chatbot/responses.php`
-
-## Compound Question Handling
-
-### Detection Logic
-
-1. **Explicit Connectors**: Questions containing "and", "e", "y", "or", "ou"
-2. **Multiple Criteria**: Questions with multiple person names + genre/year keywords
-3. **Implicit Compounds**: Questions like "action movies with Brad Pitt" (no explicit connector)
-
-### Supported Combinations
-
-- `actor + director`
-- `actor + genre`
-- `actor + year`
-- `director + genre`
-- `director + year`
-- `genre + year`
-- `genre + rating`
-
-### Processing Flow
-
+#### Language Detection
 ```php
-// Example: "What movies have Tom Hanks and Steven Spielberg?"
-1. Detect "and" connector and multiple criteria
-2. Classify as compound question with intents: ['actor', 'director']
-3. Extract entities: 
-   - Actor: "Tom Hanks"
-   - Director: "Steven Spielberg"
-4. Query database for movies matching both criteria
-5. Format response using appropriate template
+protected function detectLanguage(string $question): string
+{
+    $tokens = $this->tokenizer->tokenize(strtolower($question));
+    
+    // Count language-specific words
+    $portugueseWords = ['que', 'filmes', 'com', 'o', 'a', 'os', 'as'];
+    $englishWords = ['what', 'movies', 'with', 'the', 'a', 'an'];
+    $spanishWords = ['qué', 'películas', 'con', 'el', 'la', 'los', 'las'];
+    
+    // Count matches and return language with most matches
+    // ... counting logic ...
+    
+    return 'pt'; // default to Portuguese
+}
 ```
 
-## Response Examples
+### 3. Data Models
 
-### Simple Question (English)
-**Input**: "What movies have Bruce Willis?"
-**Output**: "I found movies with Bruce Willis:
-• Die Hard (1988) - Action - 4.50/5
-• The Sixth Sense (1999) - Thriller - 4.20/5"
+#### Movie Model
+- Represents movie data from database
+- Relationships: Genre, Ratings, Rentals
 
-### Compound Question (Portuguese)
-**Input**: "Que filmes existem com o realizador George Miller e o ator Charlize Theron"
-**Output**: "Encontrei filmes com Charlize Theron dirigidos por George Miller:
-• Mad Max: Fury Road (2015) - Action - 4.50/5"
+#### User Model
+- Represents user accounts
+- Relationships: Ratings, Rentals, Wishlist
 
-### No Results
-**Input**: "Movies with non-existent actor"
-**Output**: "I didn't find any movies with 'non-existent actor' in our catalog."
+#### Rating Model
+- Stores user movie ratings
+- Used for recommendations
 
-### Unknown Question
-**Input**: "What's the weather today?"
-**Output**: "I didn't understand your question. Please try asking about movie actors, directors, titles, genres, years, or ratings."
+#### Rental Model
+- Tracks movie rentals
+- Relationships: User, Movie
+
+## Key Features
+
+### 1. Language-Agnostic Design
+
+**Principle**: All language-specific content is stored in language files, not in code.
+
+**Benefits**:
+- Easy to add new languages
+- No code changes for translations
+- Consistent structure across languages
+- Graceful fallback mechanisms
+
+**Implementation**:
+```php
+// Load patterns from language file
+$patterns = $this->getDirectorPatterns($language);
+
+// Use patterns for classification
+foreach ($patterns as $pattern) {
+    if (str_contains($question, $pattern)) {
+        return 'director';
+    }
+}
+```
+
+### 2. Intent Classification
+
+**Process**:
+1. Detect language
+2. Load language-specific patterns
+3. Pattern matching
+4. ML fallback if needed
+5. Return intent
+
+**Example**:
+```php
+// "Filmes dirigidos por Christopher Nolan"
+// 1. Detects language: 'pt'
+// 2. Loads Portuguese patterns: ['dirigidos por', 'dirigido por']
+// 3. Matches 'dirigidos por'
+// 4. Returns 'director'
+```
+
+### 3. Entity Extraction
+
+**Process**:
+1. Detect language
+2. Load trigger words and stop words
+3. Tokenize question
+4. Extract entities based on triggers
+5. Clean and normalize results
+
+**Example**:
+```php
+// "Filmes com Die Hard no título"
+// 1. Detects language: 'pt'
+// 2. Loads Portuguese triggers: ['no título']
+// 3. Finds 'no título' at end
+// 4. Extracts 'Die Hard'
+// 5. Returns ['Die Hard']
+```
+
+### 4. Recommendation System
+
+**Process**:
+1. Analyze user ratings
+2. Find similar users (collaborative filtering)
+3. Generate personalized recommendations
+4. Cache results for frequent users
+
+**Features**:
+- Popularity-based fallback
+- Hybrid recommendations
+- Performance optimization
+
+## Workflow Examples
+
+### Single Intent Question
+**Question**: "Filmes dirigidos por Christopher Nolan"
+
+**Flow**:
+1. `NLPChatbotService->processQuestion()`
+2. `IntentClassifierService->classifyIntention()` → 'director'
+3. `EntityExtractorService->extractPersonName()` → 'Christopher Nolan'
+4. `Movie::where('director', 'LIKE', '%Nolan%')->get()`
+5. Return movie list
+
+### Compound Question
+**Question**: "Quais filmes têm Bruce Willis e quem os dirigiu?"
+
+**Flow**:
+1. `NLPChatbotService->processQuestion()`
+2. `IntentClassifierService->classifyMultipleIntents()` → ['actor', 'director']
+3. `EntityExtractorService->extractPersonName()` ×2 → ['Bruce Willis', '?']
+4. Handle each intent separately
+5. Combine results with AND condition
+
+### Title Extraction
+**Question**: "Filmes com Die Hard no título"
+
+**Flow**:
+1. `EntityExtractorService->extractTitleKeywords()`
+2. Detects 'no título' pattern
+3. Extracts content before pattern
+4. Cleans result → 'Die Hard'
+5. `Movie::where('title', 'LIKE', '%Die Hard%')->get()`
+
+## Language Support
+
+### Supported Languages
+- **Portuguese (pt)**: Primary language
+- **English (en)**: Full support
+- **Spanish (es)**: Full support
+- **Extensible**: Add new languages by creating files
+
+### Adding New Languages
+
+To add French support:
+
+1. Create language files:
+```bash
+mkdir -p resources/lang/fr/chatbot
+touch resources/lang/fr/chatbot/{feature_keywords,trigger_words,stop_words,compound_indicators,title_patterns,genre_keywords}.php
+```
+
+2. Translate content into each file
+
+3. Add French words to `detectLanguage()` method
+
+4. Test thoroughly
+
+## Performance Optimization
+
+### Caching Strategies
+- **Language Files**: Consider caching in production
+- **ML Models**: Load once, reuse across requests
+- **Recommendations**: Cache for frequent users
+- **Database Queries**: Optimize with indexes
+
+### Lazy Loading
+- Load language files only when needed
+- Load ML models on first use
+- Minimize file I/O operations
 
 ## Error Handling
 
-### Common Error Cases
+### Graceful Degradation
+1. **Missing Language Files**: Fall back to English
+2. **Unknown Languages**: Default to Portuguese
+3. **ML Failures**: Use rule-based fallback
+4. **Database Errors**: Return user-friendly messages
 
-1. **Unknown Intent**: Falls back to keyword analysis
-2. **Missing Entities**: Returns appropriate "not found" message
-3. **Database Errors**: Graceful error handling with user-friendly messages
-4. **Translation Missing**: Falls back to English translations
+### Robustness Features
+- Try-catch blocks around critical operations
+- Input validation and sanitization
+- Fallback mechanisms at every level
+- Comprehensive logging for debugging
 
-### Error Responses
+## Testing Strategy
 
-- `actor_not_found`: When actor name cannot be extracted
-- `no_actor_movies`: When no movies found for actor
-- `compound_entities_not_found`: When compound question criteria cannot be extracted
-- `no_compound_movies_found`: When no movies match compound criteria
-- `unknown_question`: When question intent cannot be determined
-
-## Performance Considerations
-
-### Caching
-
-- **Intent Classifier**: ML model is persisted to disk
-- **Movie Recommendations**: Cached for better performance
-- **Language Translations**: Loaded once and cached
-
-### Optimization Techniques
-
-1. **Eager Loading**: Database queries use `with()` for relationships
-2. **Query Optimization**: Proper indexing on frequently searched fields
-3. **Batch Processing**: Multiple entity extractions in single pass
-
-## Integration
-
-### API Endpoints
-
-The chatbot is accessible via:
-- **POST /api/chatbot**: Process user questions
-- **GET /chatbot**: Web interface
-
-### Request Format
-
-```json
-{
-    "question": "What movies have Tom Hanks?",
-    "language": "en",
-    "user_id": "optional_user_identifier"
-}
-```
-
-### Response Format
-
-```json
-{
-    "response": "I found movies with Tom Hanks:\n• Forrest Gump (1994) - Drama - 4.70/5\n• Cast Away (2000) - Adventure - 4.30/5",
-    "intents": ["actor"],
-    "entities": {
-        "actor": "Tom Hanks"
-    },
-    "language": "en"
-}
-```
-
-## Training Command
-
-The application includes an Artisan command for training the NLP chatbot model:
-
-```bash
-php artisan chatbot:train
-```
-
-### Command Options:
-
-- `--force` - Force retraining even if model exists
-- `--test` - Run in test mode without saving the model
-
-### Usage Examples:
-
-```bash
-# Train new model (prompts if model exists)
-php artisan chatbot:train
-
-# Force retraining
-php artisan chatbot:train --force
-
-# Test training without saving
-php artisan chatbot:train --test
-```
-
-### When to Use:
-
-- Initial setup of the application
-- After updating training data
-- When adding new languages or intents
-- Periodic retraining to improve accuracy
-
-## Testing
-
-### Test Coverage
-
-- **Unit Tests**: Individual component testing
-- **Integration Tests**: End-to-end question processing
-- **Language Tests**: Multi-language support verification
-
-### Test Cases
-
+### Unit Tests
 ```php
-// Example test cases
-$testCases = [
-    ['What movies have Bruce Willis?', 'actor', 'Bruce Willis'],
-    ['Who directed Inception?', 'director', 'Christopher Nolan'],
-    ['Action movies with Tom Cruise', ['actor', 'genre'], ['Tom Cruise', 'action']],
-    ['Movies from 2023 directed by James Cameron', ['director', 'year'], ['James Cameron', '2023']]
-];
+// Test language file loading
+$patterns = include 'resources/lang/pt/chatbot/trigger_words.php';
+$this->assertContains('por', $patterns['prepositions']);
+```
+
+### Integration Tests
+```php
+// Test intent classification
+$classifier = new IntentClassifierService();
+$result = $classifier->classifyIntention('Filmes dirigidos por X');
+$this->assertEquals('director', $result);
+```
+
+### End-to-End Tests
+```php
+// Test complete flow
+$chatbot = new NLPChatbotService();
+$response = $chatbot->processQuestion('Filmes com Die Hard');
+$this->assertStringContainsString('Die Hard', $response);
 ```
 
 ## Deployment
 
 ### Requirements
-
-- PHP 8.1+
-- Laravel 10+
-- MySQL 5.7+
+- PHP 8.0+
+- Laravel 9.x
 - Rubix ML (for intent classification)
+- MySQL 5.7+
 
-### Setup
-
-1. Install dependencies: `composer install`
-2. Set up database: `php artisan migrate`
-3. Train ML models: `php artisan recommendations:train`
-4. Seed sample data: `php artisan db:seed`
-
-### Configuration
-
-Environment variables in `.env`:
+### Environment Configuration
 ```env
-CHATBOT_DEFAULT_LANGUAGE=en
-CHATBOT_MAX_RESULTS=10
-CHATBOT_ENABLE_CACHING=true
+APP_LOCALE=pt
+FALLBACK_LOCALE=en
+ML_MODEL_PATH=storage/app/nlp_model.rbx
+CACHE_DRIVER=file
 ```
+
+### Scaling
+- **Horizontal Scaling**: Stateless design supports multiple instances
+- **Database**: Read replicas for query load
+- **Cache**: Redis for distributed caching
+- **Queue**: Horizon for background jobs
+
+## Maintenance
+
+### Updating Language Files
+1. Edit the appropriate language file
+2. No code changes required
+3. Clear cache if using file caching
+4. Test the changes
+
+### Adding Features
+1. Add new intent type to language files
+2. Update service methods if needed
+3. Add test coverage
+4. Document the feature
+
+### Monitoring
+- **Logs**: Comprehensive logging for debugging
+- **Metrics**: Track response times, error rates
+- **Alerts**: Set up for critical failures
+- **Analytics**: User interaction patterns
 
 ## Future Enhancements
 
-### Planned Features
+### Short-Term
+1. **More Languages**: Italian, German, French
+2. **User Preferences**: Language selection
+3. **Performance**: Query optimization
+4. **UI/UX**: Better error messages
 
-1. **Context Awareness**: Remember previous questions in conversation
-2. **Personalization**: User-specific recommendations based on history
-3. **Expanded Languages**: Support for additional languages
-4. **Voice Interface**: Voice-based question processing
-5. **Image Recognition**: Upload movie posters for identification
+### Long-Term
+1. **Voice Interface**: Voice command support
+2. **Multi-Modal**: Image/video understanding
+3. **Personalization**: User-specific models
+4. **Offline Mode**: Local processing
 
-### Potential Improvements
+## Conclusion
 
-- **Better NER**: Enhanced named entity recognition
-- **Synonym Handling**: Support for movie synonyms and aliases
-- **Fuzzy Matching**: Tolerant matching for typos and variations
-- **Performance Optimization**: Faster response times for complex queries
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Intent Misclassification**: Add more training samples
-2. **Entity Extraction Failures**: Improve regex patterns and keyword lists
-3. **Translation Missing**: Add missing keys to language files
-4. **Performance Bottlenecks**: Optimize database queries and caching
-
-### Debugging Tools
-
-```bash
-# Test intent classification
-php artisan tinker --execute="\App\Services\IntentClassifierService::classifyMultipleIntents('test question')"
-
-# Test entity extraction  
-php artisan tinker --execute="\App\Services\EntityExtractorService::extractPersonName('test question')"
-
-# Clear caches
-php artisan cache:clear
-php artisan view:clear
-```
-
-## Contributing
-
-### Guidelines
-
-1. Follow existing code style and patterns
-2. Add tests for new features
-3. Update documentation for changes
-4. Maintain backward compatibility
-
-### Adding New Intents
-
-1. Add training samples to language files
-2. Add feature keywords
-3. Add response templates
-4. Implement handler method in NLPChatbotService
-5. Update intent classification logic
-
-### Adding New Languages
-
-1. Create language directory in `resources/lang/`
-2. Add translation files (training_samples.php, feature_keywords.php, responses.php)
-3. Update language detection logic
-4. Add language to supported languages list
-
-## License
-
-This chatbot system is open-source software licensed under the MIT license.
-
-## Support
-
-For issues, questions, or contributions, please contact the development team or open an issue in the project repository.
+This architecture provides a robust, maintainable, and scalable foundation for the AI Movie Chatbot system. The language-agnostic design ensures global readiness while maintaining performance and reliability.

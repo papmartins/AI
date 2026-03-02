@@ -82,9 +82,9 @@ const examples = ref([]);
 const isLoadingExamples = ref(true);
 
 const askExemples = [
-    'What movies have Bruce Willis?',
+    'Movies starring Bruce Willis',
     'Movies directed by Christopher Nolan',
-    'Filmes com a atriz Charlize Theron?',
+    'Filmes com a atriz Charlize Theron',
     'Filmes com Die Hard no título',
     'Recommend some popular movies',
     'Quem dirigiu Mad Max?',

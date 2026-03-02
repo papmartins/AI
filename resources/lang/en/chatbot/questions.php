@@ -2,16 +2,16 @@
 
 return [
     'suggestions' => [
-        'What movies have Bruce Willis?',
+        'Movies starring Bruce Willis',
         'Movies directed by Christopher Nolan',
         'Movies starring Charlize Theron',
         'Movies with Die Hard in the title',
         'Recommend some popular movies',
         'Who directed Mad Max?',
         'Movies starring Will Ferrell',
-        'What movies star Ryan Gosling?',
+        'Movies starring Ryan Gosling',
         'Movies with Love in the title',
-        'What movies should I watch?'
+        'Recommend movies to watch'
     ],
     'intents' => [
         'actor' => [

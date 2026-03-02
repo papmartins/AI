@@ -3,7 +3,8 @@
 return [
     'actor' => [
         'actor',
-        'starred', 
+        'starred',
+        'starring',
         'cast'
     ],
     'director' => [

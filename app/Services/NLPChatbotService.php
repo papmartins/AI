@@ -383,8 +383,37 @@ class NLPChatbotService
     protected function handleDirectorQuestion(string $question, string $language): string
     {
         $directorName = $this->entityExtractor->extractPersonName($question);
-        
+
         if (empty($directorName)) {
+            // Empty name might mean this is a movie title question
+            // Try to extract title keywords
+            $titleKeywords = $this->entityExtractor->extractTitleKeywords($question);
+            if (!empty($titleKeywords)) {
+                // This is likely a movie title, search for the movie and return its director
+                $titleKeyword = $titleKeywords[0];
+                $movies = Movie::with(['genre', 'ratings'])
+                    ->where('title', 'like', '%' . $titleKeyword . '%')
+                    ->get();
+                
+                if ($movies->isEmpty()) {
+                    return $this->getLanguageResponse('no_director_movies', $language, ['name' => $titleKeyword]);
+                }
+                
+                // Return the director of the found movie
+                $movie = $movies->first();
+                $director = $movie->director ?? 'Unknown';
+                $genreName = $movie->genre ? $movie->genre->name : 'Unknown';
+                $rating = $movie->ratings_avg_rating ?? $movie->avg_rating;
+                
+                return $this->getLanguageResponse('movie_director_found', $language, [
+                    'title' => $movie->title,
+                    'director' => $director,
+                    'year' => $movie->year,
+                    'genre' => $genreName,
+                    'rating' => number_format($rating, 2)
+                ]);
+            }
+            
             return $this->getLanguageResponse('director_not_found', $language);
         }
         

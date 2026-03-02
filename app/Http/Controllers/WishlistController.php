@@ -32,7 +32,7 @@ class WishlistController extends Controller
         return Inertia::render('Wishlist/Index', compact('movies', 'rentedMovieIds'));
     }
 
-    public function toggle(Request $request, Movie $movie)
+    public function toggle(Request $request, String $locale, Movie $movie)
     {
         $userId = auth()->id();
         // use the Wishlist model relation (hasMany) instead of pivot attach/detach

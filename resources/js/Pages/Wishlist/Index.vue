@@ -106,7 +106,7 @@
 </template>
 
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import { Inertia } from '@inertiajs/inertia';
 import axios from 'axios';
 import { computed, ref, watch } from 'vue';
@@ -122,6 +122,9 @@ const props = defineProps({
 // local reactive copy so we can update UI immediately
 const localWishlist = ref([...props.movies.data]);
 const wishlistMovies = computed(() => localWishlist.value);
+
+const page = usePage();
+const locale = page.props.locale || 'en';
 
 // keep local copy in sync if props change (pagination, reload)
 watch(
@@ -150,7 +153,7 @@ const rentMovie = async (movieId) => {
 
 const removeFromWishlist = async (movieId) => {
     try {
-        const res = await axios.post(`/wishlist/${movieId}/toggle`);
+        const res = await axios.post(`/${locale}/wishlist/${movieId}/toggle`);
         const msg = res.data?.message || 'Updated wishlist';
         alert(msg);
         // remove from local wishlist when removed, otherwise reload to reflect add

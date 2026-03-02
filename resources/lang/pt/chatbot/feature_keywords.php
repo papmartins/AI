@@ -4,13 +4,16 @@ return [
     'actor' => [
         'ator',
         'estrelou',
-        'elenco'
+        'elenco',
+        'protagonizados',
+        'protagonizadas'
     ],
     'director' => [
         'diretor',
         'realizador',
         'dirigiu',
-        'dirigido por'
+        'dirigido por',
+        'dirigidos'
     ],
     'title' => [
         'título'

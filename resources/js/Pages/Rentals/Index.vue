@@ -14,12 +14,12 @@
         <div class="space-y-2 mb-6">
           <div class="flex justify-between">
             <span>{{ trans('Rented') }}:</span>
-            <span class="font-semibold">{{ rental.rented_at }}</span>
+            <span class="font-semibold">{{ formatDate(rental.rented_at) }}</span>
           </div>
           <div class="flex justify-between">
             <span>{{ trans('Due') }}:</span>
             <span :class="rental.due_date < today ? 'text-red-500 font-bold' : 'text-green-600 font-semibold'">
-              {{ rental.due_date }}
+              {{ formatDate(rental.due_date) }}
             </span>
           </div>
           <div class="flex justify-between">
@@ -68,7 +68,22 @@ const props = defineProps({
 });
 const rentals = props.rentals;
 
-const today = computed(() => new Date().toISOString().split('T')[0]);
+const today = computed(() => new Date().toISOString());
+
+// Date formatting helper
+const pad = (n) => String(n).padStart(2, '0');
+const formatDate = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const Y = d.getFullYear();
+  const M = pad(d.getMonth() + 1);
+  const D = pad(d.getDate());
+  const h = pad(d.getHours());
+  const m = pad(d.getMinutes());
+  const s = pad(d.getSeconds());
+  return `${Y}-${M}-${D} ${h}:${m}:${s}`;
+};
 
 // Local reactive copy so we can update UI without reloading
 const localRentals = ref([...rentals.data]);

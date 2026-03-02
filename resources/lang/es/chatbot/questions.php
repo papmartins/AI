@@ -2,16 +2,16 @@
 
 return [
     'suggestions' => [
-        '¿Qué películas tienen Bruce Willis?',
+        'Películas protagonizadas por Bruce Willis',
         'Películas dirigidas por Christopher Nolan',
         'Películas con la actriz Charlize Theron',
         'Películas con Die Hard en el título',
         'Recomendar algunas películas populares',
         '¿Quién dirigió Mad Max?',
         'Películas protagonizadas por Will Ferrell',
-        '¿Qué películas protagonizadas por Ryan Gosling?',
+        'Películas protagonizadas por Ryan Gosling',
         'Películas con Love en el título',
-        '¿Qué películas debo ver?'
+        'Recomendar películas para ver'
     ],
     'intents' => [
         'actor' => [

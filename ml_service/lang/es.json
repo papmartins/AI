@@ -1,0 +1,52 @@
+{
+  "indicators": ["qué", "películas", "con", "director", "actor"],
+  "confirm": ["qué", "películas", "director", "actor"],
+  "intent_labels": ["actor", "director", "genre", "year", "rating", "title", "recommendation"],
+  "intent_templates": {
+    "actor": ["películas con", "protagonizado por", "actor", "estrella", "reparto"],
+    "director": ["dirigido por", "director", "realizador"],
+    "genre": ["acción", "comedia", "terror", "género", "drama", "aventura"],
+    "year": ["lanzado en", "de", "año"],
+    "rating": ["bien valorados", "mejores", "valorados", "puntuación"],
+    "title": ["título", "llamado", "nombrado"],
+    "recommendation": ["recomendar", "sugerir", "popular", "recomienda", "sugiere"]
+  },
+  "language_detection": [" qué ", " ¿", "película", "películas"],
+  "entity_extraction_patterns": {
+    "movie_prefixes": ["películas con ", "películas sobre ", "series con ", "programas que presentan "],
+    "person_prefixes": ["películas protagonizadas por ", "películas dirigidas por ", "películas de "],
+    "trailing_phrases": [" en el título", " protagonizada por"]
+  },
+  "intent_context_patterns": [
+    {
+      "pattern": ["título", "en el título"],
+      "intent": "title",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["películas con"],
+      "intent": "title",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["protagonizado por"],
+      "intent": "actor",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["dirigido por"],
+      "intent": "director",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["director"],
+      "intent": "director",
+      "confidence": 0.7
+    }
+  ],
+  "entity_split_expressions": {
+    "conjunctions": [" y ", " o ", " & "],
+    "role_indicators": ["director ", "actor ", "protagonizado por ", "con director ", "con actor "],
+    "language_specific": [" con ", " protagonizado por ", " dirigido por "]
+  }
+}

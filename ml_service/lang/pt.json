@@ -1,0 +1,62 @@
+{
+  "indicators": ["que", "filmes", "com", "o", "a", "de", "para", "ator", "realizador", "diretor"],
+  "confirm": ["que", "filmes", "ator", "realizador", "diretor"],
+  "intent_labels": ["actor", "director", "genre", "year", "rating", "title", "recommendation"],
+  "intent_templates": {
+    "actor": ["filmes com", "filmes estrelados por", "filmes protagonizados por", "protagonista", "ator", "estrela", "elenco"],
+    "director": ["dirigido por", "diretor", "realizador"],
+    "genre": ["ação", "comédia", "terror", "gênero", "drama", "aventura"],
+    "year": ["lançado em", "de", "ano"],
+    "rating": ["bem avaliados", "melhores", "avaliados", "nota"],
+    "title": ["título", "chamado", "nomeado"],
+    "recommendation": ["recomendar", "sugerir", "popular", "recomenda", "sugere"]
+  },
+  "language_detection": ["que", " o ", " a ", "com"],
+  "entity_extraction_patterns": {
+    "movie_prefixes": ["filmes com ", "filmes sobre ", "séries com ", "programas que apresentam "],
+    "person_prefixes": ["filmes estrelados por ", "filmes protagonizados por ", "filmes dirigidos por ", "filmes de ", "realizou ", "dirigido por "],
+    "trailing_phrases": [" no título", " estrelado por"]
+  },
+  "intent_context_patterns": [
+    {
+      "pattern": ["título", "no título"],
+      "intent": "title",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["filmes com"],
+      "intent": "title",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["estrelado por"],
+      "intent": "actor",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["dirigido por"],
+      "intent": "director",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["realizador"],
+      "intent": "director",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["ator"],
+      "intent": "actor",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["diretor"],
+      "intent": "director",
+      "confidence": 0.7
+    }
+  ],
+  "entity_split_expressions": {
+    "conjunctions": [" e ", " ou ", " & "],
+    "role_indicators": ["realizador ", "diretor ", "ator ", "com realizador ", "com diretor ", "com ator "],
+    "language_specific": [" com ", " estrelado por ", " dirigido por "]
+  }
+}

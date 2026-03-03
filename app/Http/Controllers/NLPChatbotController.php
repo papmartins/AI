@@ -3,15 +3,53 @@
 namespace App\Http\Controllers;
 
 use App\Services\NLPChatbotService;
-use App\Services\IntentClassifierService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
 
 class NLPChatbotController extends Controller
 {
-    public function __construct(protected NLPChatbotService $chatbotService, protected IntentClassifierService $intentClassifier)
+    public function __construct(protected NLPChatbotService $chatbotService)
     {
+    }
+    
+    /**
+     * Show the chatbot page with example questions
+     *
+     * @return \Inertia\Response
+     */
+    public function index(Request $request)
+    {
+        // Get the current locale from session or request
+        $locale = $request->session()->get('locale') ?? app()->getLocale();
+        
+        // Load examples from the language files
+        $examples = $this->loadChatbotExamples($locale);
+        
+        return Inertia::render('Chatbot', [
+            'examples' => $examples
+        ]);
+    }
+    
+    /**
+     * Load chatbot examples from language files
+     *
+     * @param string $locale
+     * @return array
+     */
+    protected function loadChatbotExamples(string $locale): array
+    {
+        // Try to load from the language file
+        $examples = trans('chatbot/questions.suggestions', [], $locale);
+        
+        // If no examples found in the specified locale, fall back to Portuguese
+        if (empty($examples)) {
+            $examples = trans('chatbot/questions.suggestions', [], 'pt');
+        }
+        
+        // Ensure we always return an array
+        return is_array($examples) ? $examples : [];
     }
     
     public function chat(Request $request)
@@ -20,13 +58,19 @@ class NLPChatbotController extends Controller
         $question = $requestArray['question'] ?? null;
         $userId = $request->user()?->id ?? 'guest_' . uniqid();
         
+        // Get locale from header or query parameter (simple and reliable)
+        $locale = $request->header('X-Locale') ?? $request->input('lang') ?? 'pt';
+        
+        // Set the locale for this request
+        app()->setLocale($locale);
+        
         if (empty($question)) {
             return response()->json([
-                'response' => 'Por favor, faça uma pergunta sobre filmes.'
+                'response' => __('chatbot/responses.unknown_question')
             ]);
         }
         
-        // Processar a pergunta usando NLP com contexto de usuário
+        // Processar a pergunta usando o microserviço NLP (caixa negra)
         $response = $this->chatbotService->processQuestion($question, $userId);
         
         return response()->json([
@@ -114,38 +158,4 @@ class NLPChatbotController extends Controller
         ]);
     }
     
-    /**
-     * Train the NLP model
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function train()
-    {
-        try {
-            $modelPath = $this->getModelPath();
-            
-            // Force retraining by deleting any existing model
-            if (File::exists($modelPath)) {
-                File::delete($modelPath);
-            }
-            
-            // This will trigger automatic retraining since the model file doesn't exist
-            $estimator = $this->intentClassifier->loadOrTrainIntentionClassifier();
-            
-            Log::info('NLP model training completed successfully');
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Model training completed successfully',
-                'model_path' => $modelPath
-            ]);
-            
-        } catch (\Exception $e) {
-            Log::error('NLP model training failed: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Model training failed: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 }

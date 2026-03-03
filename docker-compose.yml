@@ -3,7 +3,7 @@ services:
   app:
     build: .
     container_name: laravel_app
-    restart: unless-stopped
+    # restart: unless-stopped
     volumes:
       - .:/var/www/html
     working_dir: /var/www/html
@@ -16,7 +16,7 @@ services:
   nginx:
     image: nginx:alpine
     container_name: laravel_nginx
-    restart: unless-stopped
+    # restart: unless-stopped
     ports:
       - "8080:80"
     volumes:
@@ -30,7 +30,7 @@ services:
   db:
     image: mariadb:11
     container_name: laravel_db
-    restart: unless-stopped
+    # restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: laravel
@@ -55,6 +55,29 @@ services:
     command: sh -c "npm install && npm run dev"
     networks:
       - laravel_net
+
+  nlp-service:
+    build:
+      context: ./ml_service
+      dockerfile: Dockerfile
+    container_name: nlp_microservice
+    # restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      NLP_SERVICE_PORT: 8001
+      FLASK_ENV: production
+      LOG_LEVEL: INFO
+    volumes:
+      - ./ml_service:/app
+    networks:
+      - laravel_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
   dbdata:

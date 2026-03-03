@@ -3,9 +3,10 @@
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use App\Services\NLPChatbotService;
-use App\Services\IntentClassifierService;
+use App\Services\NLPIntentClassifierService;
 use App\Services\EntityExtractorService;
 
 class NLPChatbotTest extends TestCase
@@ -20,7 +21,7 @@ class NLPChatbotTest extends TestCase
     {
         parent::setUp();
         
-        $this->intentClassifier = new IntentClassifierService();
+        $this->intentClassifier = new NLPIntentClassifierService();
         $this->entityExtractor = new EntityExtractorService();
         
         // Create NLPChatbotService with its dependency
@@ -28,7 +29,7 @@ class NLPChatbotTest extends TestCase
         $this->chatbotService = new NLPChatbotService($movieRecommender);
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_portuguese_language_correctly()
     {
         $portugueseQuestions = [
@@ -46,7 +47,7 @@ class NLPChatbotTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_english_language_correctly()
     {
         $englishQuestions = [
@@ -64,7 +65,7 @@ class NLPChatbotTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_spanish_language_correctly()
     {
         $spanishQuestions = [
@@ -82,7 +83,7 @@ class NLPChatbotTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function it_classifies_actor_intent_correctly()
     {
         $actorQuestions = [
@@ -98,7 +99,7 @@ class NLPChatbotTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function it_classifies_director_intent_correctly()
     {
         $directorQuestions = [
@@ -114,7 +115,7 @@ class NLPChatbotTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function it_classifies_genre_intent_correctly()
     {
         $genreQuestions = [
@@ -130,7 +131,7 @@ class NLPChatbotTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function it_extracts_actor_names_correctly()
     {
         $actorTests = [
@@ -146,7 +147,7 @@ class NLPChatbotTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function it_extracts_director_names_correctly()
     {
         $directorTests = [
@@ -162,7 +163,7 @@ class NLPChatbotTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_compound_questions_correctly()
     {
         $compoundTests = [
@@ -190,7 +191,7 @@ class NLPChatbotTest extends TestCase
 
 
 
-    /** @test */
+    #[Test]
     public function it_filters_out_common_words_from_entity_extraction()
     {
         $commonWordTests = [

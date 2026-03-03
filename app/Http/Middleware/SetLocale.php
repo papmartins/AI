@@ -18,7 +18,7 @@ class SetLocale
      */
     public function handle(Request $request, Closure $next)
     {
-        // Check if language is set in request (for language switching) - higher priority
+        // Check if language is set in request (for language switching) - highest priority
         if ($request->has('language')) {
             $language = $request->input('language');
             if (in_array($language, ['en', 'pt', 'es'])) {
@@ -27,8 +27,15 @@ class SetLocale
             }
         }
         
-        // Check if language is set in session
-        if (Session::has('locale')) {
+        // Check URL prefix for language (e.g., /pt/, /en/, /es/)
+        $firstSegment = $request->segment(1);
+        if (in_array($firstSegment, ['en', 'pt', 'es'])) {
+            Session::put('locale', $firstSegment);
+            App::setLocale($firstSegment);
+        }
+        
+        // Always check session if available (for both web and API with session)
+        elseif ($request->hasSession() && Session::has('locale')) {
             App::setLocale(Session::get('locale'));
         }
         

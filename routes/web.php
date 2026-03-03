@@ -84,7 +84,7 @@ Route::middleware(['auth', 'verified', 'locale'])->prefix('{locale}')->where(['l
         ->name('model-training.index');
 
     // Chatbot route
-    Route::get('/chatbot', [\App\Http\Controllers\ChatbotController::class, 'index'])->name('chatbot');
+    Route::get('/chatbot', [\App\Http\Controllers\NLPChatbotController::class, 'index'])->name('chatbot');
 
 });
 

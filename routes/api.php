@@ -106,3 +106,10 @@ Route::post('/login', function (Request $request) {
 
     return response()->json(['message' => 'Login OK']);
 });
+
+// NLP Service API Endpoints
+Route::prefix('nlp')->group(function () {
+    Route::post('/analyze', [\App\Http\Controllers\NLPController::class, 'analyzeQuestion']);
+    Route::post('/extract-entities', [\App\Http\Controllers\NLPController::class, 'extractEntities']);
+    Route::post('/semantic-search', [\App\Http\Controllers\NLPController::class, 'semanticSearch']);
+});

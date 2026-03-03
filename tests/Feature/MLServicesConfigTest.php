@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use App\Services\IntentClassifierService;
+use App\Services\NLPIntentClassifierService;
 use App\Services\IrisClassifier;
 use App\Services\MovieRecommender;
 use App\Services\AnomalyDetector;
@@ -18,7 +18,7 @@ class MLServicesConfigTest extends TestCase
     public function test_all_services_use_config()
     {
         // Test NLP Chatbot Service
-        $nlpService = new IntentClassifierService();
+        $nlpService = new NLPIntentClassifierService();
         $nlpPath = $nlpService->getModelPath();
         $this->assertStringContainsString('nlp_intention_classifier.model', $nlpPath);
         
@@ -119,7 +119,7 @@ class MLServicesConfigTest extends TestCase
     public function test_directory_creation_for_model_saving()
     {
         // Test that the service can handle directory creation
-        $service = new IntentClassifierService();
+        $service = new NLPIntentClassifierService();
         $modelPath = $service->getModelPath();
         $directory = dirname($modelPath);
         

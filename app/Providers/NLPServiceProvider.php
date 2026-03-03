@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use App\Services\IntentClassifierService;
+use App\Services\NLPIntentClassifierService;
 use App\Services\EntityExtractorService;
 
 class NLPServiceProvider extends ServiceProvider
@@ -13,8 +13,8 @@ class NLPServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(IntentClassifierService::class, function ($app) {
-            return new IntentClassifierService();
+        $this->app->singleton(NLPIntentClassifierService::class, function ($app) {
+            return new NLPIntentClassifierService();
         });
         
         $this->app->singleton(EntityExtractorService::class, function ($app) {

@@ -1,0 +1,87 @@
+{
+  "indicators": ["the", "a", "movie", "film", "what", "which", "show", "director", "actor"],
+  "confirm": ["movie", "film", "director", "actor"],
+  "intent_labels": ["actor", "director", "genre", "year", "rating", "title", "recommendation"],
+  "intent_templates": {
+    "actor": ["movies with", "films starring", "protagonist", "actor", "star", "cast"],
+    "director": ["directed by", "director", "filmmaker", "who directed", "directed", "who directed "],
+    "genre": ["action", "comedy", "horror", "genre", "drama", "adventure"],
+    "year": ["released in", "from", "year"],
+    "rating": ["highly rated", "best", "rated", "score"],
+    "title": ["title", "called", "named"],
+    "recommendation": ["recommend", "suggest", "popular", "recommends", "suggests"]
+  },
+  "language_detection": [" what ", " the ", " a ", " movie", " film"],
+  "entity_extraction_patterns": {
+    "movie_prefixes": ["movies with ", "films about ", "shows featuring ", "series containing "],
+    "person_prefixes": ["movies starring ", "movies directed by ", "films by ", "directed by ", "director ", "actress ", "actor ", "with "],
+    "trailing_phrases": [" in the title", " featuring "]
+  },
+  "intent_context_patterns": [
+    {
+      "pattern": ["action"],
+      "intent": "genre",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["title", "in the title"],
+      "intent": "title",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["title", "with the title"],
+      "intent": "title",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["movies with"],
+      "intent": "actor",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["films with"],
+      "intent": "title",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["starring"],
+      "intent": "actor",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["starred by"],
+      "intent": "actor",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["protagonist"],
+      "intent": "actor",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["actress"],
+      "intent": "actor",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["directed by"],
+      "intent": "director",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["director"],
+      "intent": "director",
+      "confidence": 0.7
+    },
+    {
+      "pattern": ["filmmaker"],
+      "intent": "director",
+      "confidence": 0.7
+    }
+  ],
+  "entity_split_expressions": {
+    "conjunctions": [" and ", " or ", " & "],
+    "role_indicators": ["director ", "actor ", "starring ", "with director ", "with actor "],
+    "language_specific": [" with ", " featuring ", " starring "]
+  }
+}

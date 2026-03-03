@@ -31,4 +31,9 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'nlp_service' => [
+        'url' => env('NLP_SERVICE_URL', 'http://localhost:8001'),
+        'timeout' => env('NLP_SERVICE_TIMEOUT', 30),
+    ],
+
 ];

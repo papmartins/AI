@@ -1,0 +1,107 @@
+{
+  "language": "pt",
+  "name": "Portuguese",
+  "indicators": [
+    "filme", "filmes", "cinema", "longa", "longa-metragem",
+    "ator", "atriz", "atores", "atrizes", "elenco",
+    "diretor", "diretora", "diretores", "diretoras", "realizador", "realizadora",
+    "gênero", "genero", "ação", "comédia", "drama", "terror", "romance", "ficção",
+    "avaliação", "avaliações", "nota", "notas", "classificação", "estrela", "estrelas",
+    "ano", "data", "lançamento", "estreia", "exibição",
+    "recomendar", "recomendações", "sugestão", "sugestões", "indicação", "indicações",
+    "título", "nome", "chamado", "intitulado",
+    "onde", "quando", "como", "porque", "qual", "quais", "quem",
+    "melhor", "pior", "bom", "ruim", "ótimo", "excelente", "péssimo",
+    "assistir", "ver", "vizualizar", "conferir", "olhar"
+  ],
+  "common_questions": [
+    "quais filmes",
+    "que filmes",
+    "quais são os filmes",
+    "quais os filmes",
+    "quais filmes têm",
+    "quais filmes têm o",
+    "quais filmes têm a",
+    "quais filmes com",
+    "filmes com o",
+    "filmes com a",
+    "filmes do",
+    "filmes da",
+    "filmes de",
+    "filmes que",
+    "filmes onde",
+    "filmes em que"
+  ],
+  "keywords": {
+    "director": ["diretor", "diretora", "diretores", "diretoras", "realizador", "realizadora", "dirigido por", "dirigidos por", "dirigidos", "dirigiu", "directed"],
+    "actor": ["ator", "atriz", "atores", "atrizes", "elenco", "estrela", "protagonizado por", "protagonizados por", "protagonizadas por", "protagonizados", "protagonizou", "cast"],
+    "genre": ["gênero", "genero", "ação", "comédia", "drama", "terror", "romance", "ficção", "ficção científica", "aventura", "suspense", "animação", "fantasia", "documentário", "crime", "mistério", "familia", "história"],
+    "year": ["ano", "data", "lançamento", "estreia", "exibição"],
+    "rating": ["avaliação", "avaliações", "nota", "notas", "classificação", "estrela", "estrelas", "bom", "ruim", "ótimo", "excelente", "péssimo"],
+    "title": ["título", "nome", "chamado", "intitulado"],
+    "recommend": ["recomendar", "recomendações", "sugestão", "sugestões", "indicação", "indicações", "melhor", "popular", "favorito", "recomenda", "melhores", "recomende"],
+    "recommend_phrases": [
+        "recomende ", "recomenda ", "recomendar ", "sugira ", "sugerir ",
+        "que devo assistir", "que filmes recomendas"
+    ],
+    "general_recommend_patterns": [
+        "^recomende ", "^recomenda ", "^recomendar ",
+        "^sugira ", "^sugerir "
+    ],
+    "actor_title_phrases": [
+        "quem protagonizou ", "quem estrelou ", "quem atuou em ",
+        "qual é o elenco de ", "qual é o elenco em ",
+        "quem estrela ", "quem interpreta em ",
+        "protagonizou "
+    ],
+    "title_in_title_phrases": [
+        "com .+ no título", "com .+ no nome"
+    ],
+    "actor_title_patterns": [
+        "quem protagonizou .+\\??",
+        "quem estrelou .+\\??",
+        "quem atuou em .+\\??",
+        "qual é o elenco de .+\\??",
+        "qual é o elenco em .+\\??",
+        "quem estrela .+\\??",
+        "quem interpreta em .+\\??",
+        "protagonizou .+\\??"
+    ],
+    "director_title_phrases": [
+        "dirigido por ", "quem dirigiu ", "quem foi o diretor de ",
+        "quem dirigiu o filme ", "filmes dirigidos por "
+    ],
+    "director_title_patterns": [
+        "dirigido por .+\\??",
+        "quem dirigiu .+\\??",
+        "quem foi o diretor de .+\\??",
+        "quem dirigiu o filme .+\\??",
+        "filmes dirigidos por .+\\??"
+    ],
+    "who_question_prefixes": [
+        "quem ", "who ", "qual é o elenco de ", "qual é o elenco em "
+    ],
+    "rating_question_prefixes": [
+        "qual a avaliação de ", "qual a avaliação do ", "qual a nota de ", "qual a nota do "
+    ],
+    "rating_question_patterns": [
+        "qual a avaliação de .+\\??",
+        "qual a avaliação do .+\\??",
+        "qual a nota de .+\\??",
+        "qual a nota do .+\\??"
+    ],
+    "rating_title_phrases": [
+        "qual a avaliação de ",
+        "qual a avaliação do ",
+        "qual a nota de ",
+        "qual a nota do "
+    ],
+    "directed_by_phrases": ["dirigidos por", "filmes dirigidos por"],
+    "starring_phrases": ["protagonizados por", "filmes protagonizados por"],
+    "combined_query_keywords": {
+        "director": ["realizador", "diretor", "realizadora"],
+        "actor": ["ator", "elenco", "atriz"]
+    },
+    "question_words": ["what", "which", "who", "qual", "quais", "quem", "que"]
+  }
+}

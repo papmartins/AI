@@ -1,0 +1,92 @@
+{
+  "language": "es",
+  "name": "Spanish",
+  "indicators": [
+    "película", "películas", "cine", "film", "films", "largometraje",
+    "actor", "actriz", "actores", "actrices", "reparto", "elenco", "protagonista",
+    "director", "directora", "directores", "directoras", "realizador", "realizadora",
+    "género", "genero", "acción", "comedia", "drama", "terror", "romance", "ciencia ficción",
+    "valoración", "puntuación", "calificación", "estrella", "estrellas", "nota", "crítica",
+    "año", "fecha", "estreno", "lanzamiento", "exhibición",
+    "recomendar", "recomendación", "recomendaciones", "sugerir", "sugerencia",
+    "título", "nombre", "llamado", "titulado",
+    "qué", "cuál", "cuáles", "dónde", "cuándo", "cómo", "por qué", "quién", "quiénes",
+    "mejor", "peor", "bueno", "malo", "excelente", "genial", "pésimo",
+    "ver", "mirar", "visualizar", "conferir"
+  ],
+  "common_questions": [
+    "qué películas",
+    "cuáles películas",
+    "qué películas hay",
+    "cuáles son las películas",
+    "qué películas tienen",
+    "qué películas con",
+    "películas con",
+    "películas que",
+    "películas donde",
+    "películas en las que",
+    "películas con el",
+    "películas con la",
+    "películas del",
+    "películas de la",
+    "películas dirigidas por",
+    "películas de"
+  ],
+  "keywords": {
+    "director": ["director", "directora", "directores", "directoras", "realizador", "realizadora", "dirigido por"],
+    "actor": ["actor", "actriz", "actores", "actrices", "reparto", "elenco", "protagonista", "protagonizó"],
+    "genre": ["género", "genero", "acción", "comedia", "drama", "terror", "romance", "ciencia ficción", "aventura", "suspense", "animación", "fantasía", "documental", "crimen", "misterio", "familia", "historia"],
+    "year": ["año", "fecha", "estreno", "lanzamiento", "exhibición"],
+    "rating": ["valoración", "puntuación", "calificación", "estrella", "estrellas", "nota", "crítica", "bueno", "malo", "excelente", "genial", "pésimo"],
+    "title": ["título", "nombre", "llamado", "titulado"],
+    "recommend": ["recomendar", "recomendación", "recomendaciones", "sugerir", "sugerencia", "mejor", "popular", "favorito", "recomienda", "recomiendas"],
+    "recommend_phrases": [
+        "recomendar ", "sugerir ", "qué películas recomiendas", "qué me recomiendas",
+        "qué películas sugieres", "qué puedo ver"
+    ],
+    "general_recommend_patterns": [
+        "^recomendar ", "^sugerir ", "^qué películas", "^qué me recomiendas",
+        "^qué puedo ver", "^sugiere"
+    ],
+    "actor_title_phrases": [
+        "quién protagonizó ", "quién actuó en ", "quién estuvo en ",
+        "cuál es el elenco de ", "cuál es el reparto de ",
+        "quién actúa en ", "quién interpreta en ",
+        "protagonizó "
+    ],
+    "actor_title_patterns": [
+        "quién protagonizó .+\\??",
+        "quién actuó en .+\\??",
+        "quién estuvo en .+\\??",
+        "cuál es el elenco de .+\\??",
+        "cuál es el reparto de .+\\??",
+        "quién actúa en .+\\??",
+        "quién interpreta en .+\\??",
+        "protagonizó .+\\??"
+    ],
+    "director_title_phrases": [
+        "dirigido por ", "quién dirigió ", "quién fue el director de ",
+        "películas dirigidas por "
+    ],
+    "director_title_patterns": [
+        "dirigido por .+\\??",
+        "quién dirigió .+\\??",
+        "quién fue el director de .+\\??",
+        "películas dirigidas por .+\\??"
+    ],
+    "who_question_prefixes": [
+        "quién ", "cuál es el elenco de ", "cuál es el reparto de "
+    ],
+    "rating_question_prefixes": [
+        "¿cuál es la calificación de ",
+        "¿cuál es la puntuación de "
+    ],
+    "directed_by_phrases": ["dirigido por", "películas dirigidas por"],
+    "starring_phrases": ["protagonizado por", "películas protagonizadas por"],
+    "combined_query_keywords": {
+        "director": ["director", "realizador"],
+        "actor": ["actor", "reparto", "elenco"]
+    },
+    "question_words": ["qué", "cuál", "cuáles", "dónde", "cuándo", "cómo", "por qué", "quién", "quiénes"]
+  }
+}

@@ -9,7 +9,9 @@ return new class extends Migration
     public function up(): void {
         Schema::create('genres', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('name_en'); // English name
+            $table->string('name_pt'); // Portuguese name
+            $table->string('name_es'); // Spanish name
             $table->timestamps();
         });
     }

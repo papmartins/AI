@@ -31,6 +31,6 @@ use HasFactory;
     }
     
     public function getAvgRatingAttribute() {
-        return $this->ratings()->avg('rating') ?? 0;
+        return round($this->ratings()->avg('rating') ?? 0, 2);
     }
 }

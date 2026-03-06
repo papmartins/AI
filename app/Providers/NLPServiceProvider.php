@@ -2,9 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\MLMicroserviceClient;
 use Illuminate\Support\ServiceProvider;
-use App\Services\IntentClassifierService;
-use App\Services\EntityExtractorService;
 
 class NLPServiceProvider extends ServiceProvider
 {
@@ -13,12 +12,8 @@ class NLPServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(IntentClassifierService::class, function ($app) {
-            return new IntentClassifierService();
-        });
-        
-        $this->app->singleton(EntityExtractorService::class, function ($app) {
-            return new EntityExtractorService();
+        $this->app->singleton(MLMicroserviceClient::class, function ($app) {
+            return new MLMicroserviceClient();
         });
     }
     

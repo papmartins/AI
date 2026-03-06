@@ -1,0 +1,542 @@
+#!/usr/bin/env python3
+
+import os
+from pydoc import doc
+import spacy
+import logging
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List, Dict, Any, Optional
+from dotenv import load_dotenv
+import sys
+
+# Add parent directory to path for config import
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Load environment variables
+load_dotenv()
+
+# Import configuration
+from config import config
+
+# Import language detector
+from src.language_detector import language_detector
+
+# Import intent classifier
+from src.intent_classifier import classify_intents
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Initialize FastAPI app
+app = FastAPI(
+    title="ML Microservice API",
+    description="Simplified ML microservice for NLP tasks using spaCy",
+    version="2.0.0"
+)
+
+# Load spaCy models
+models = {}
+
+class QuestionRequest(BaseModel):
+    question: str
+    language: Optional[str] = None
+    user_id: Optional[str] = None
+
+class IntentResponse(BaseModel):
+    intents: List[str]
+    entities: Dict[str, Any]
+    language: str
+    confidence: float
+
+class EntityResponse(BaseModel):
+    entities: Dict[str, Any]
+    language: str
+
+class RecommendationRequest(BaseModel):
+    user_id: Optional[str] = None
+    limit: int = 5
+    filters: Optional[Dict[str, Any]] = None
+
+class RecommendationResponse(BaseModel):
+    recommendations: List[Dict[str, Any]]
+    user_id: Optional[str] = None
+
+def load_spacy_models():
+    """Load spaCy language models"""
+    try:
+        logger.info("Loading spaCy models...")
+        
+        # Portuguese model
+        models['pt'] = spacy.load("pt_core_news_sm")
+        logger.info("Loaded Portuguese model")
+        
+        # English model  
+        models['en'] = spacy.load("en_core_web_sm")
+        logger.info("Loaded English model")
+        
+        # Spanish model
+        models['es'] = spacy.load("es_core_news_sm")
+        logger.info("Loaded Spanish model")
+            
+    except Exception as e:
+        logger.error(f"Error loading spaCy models: {e}")
+        raise
+
+def detect_language(text: str) -> str:
+    """Detect language of the input text using language detector module"""
+    try:
+        return language_detector.detect_language(text)
+    except Exception as e:
+        logger.error(f"Error detecting language: {e}")
+        return 'en'
+
+def classify_intents(question: str, language: str) -> Dict[str, Any]:
+    """Classify intents using spaCy NLP"""
+    global models
+    try:
+        logger.info(f"Classifying: {question[:50]}...")
+        if language not in models:
+            language = 'en'
+            
+        nlp = models[language]
+        doc = nlp(question)
+
+        # logger.info(f"Tokens: {[token.text for token in doc]}")
+        # logger.info(f"POS tags: {[token.pos_ for token in doc]}")
+        # logger.info(f"Dependencies: {[token.dep_ for token in doc]}")
+        # logger.info(f"Entities: {[(ent.text, ent.label_) for ent in doc.ents]}")
+        
+        # Initialize result
+        result = {
+            'intents': [],
+            'entities': {},
+            'language': language,
+            'confidence': 0.0
+        }
+        
+        text_lower = question.lower()
+        
+        # Get keywords from language config
+        lang_config = language_detector.languages.get(language, {})
+        keywords = lang_config.get('keywords', {})
+        
+        # Check for recommendation intent
+        recommend_keywords = keywords.get('recommend', [])
+        recommend_phrases = keywords.get('recommend_phrases', [])
+        has_recommend_keyword = any(token.text.lower() in recommend_keywords for token in doc)
+        has_recommend_phrase = any(phrase in text_lower for phrase in recommend_phrases)
+        
+        if has_recommend_keyword or has_recommend_phrase:
+            result['intents'].append('recommendation')
+            result['confidence'] = 0.9
+            return result
+        
+        # Check for "who" questions using language config
+        who_question_prefixes = keywords.get('who_question_prefixes', [])
+        if any(phrase in text_lower for phrase in who_question_prefixes):
+            # Check for director keywords
+            director_keywords = keywords.get('director', [])
+            has_director_keyword = any(token.text.lower() in director_keywords for token in doc)
+            
+            # Check for actor keywords
+            actor_keywords = keywords.get('actor', [])
+            has_actor_keyword = any(token.text.lower() in actor_keywords for token in doc)
+            
+            # Handle combined "cast and director" queries
+            if has_director_keyword and has_actor_keyword:
+                # Try to extract title from director patterns first
+                title_extracted = False
+                for pattern in keywords.get('director_title_patterns', []):
+                    import re
+                    match = re.search(pattern, text_lower)
+                    if match:
+                        full_match = match.group(0)
+                        director_title_phrases = keywords.get('director_title_phrases', [])
+                        for prefix in director_title_phrases:
+                            if full_match.startswith(prefix):
+                                title = full_match[len(prefix):].strip()
+                                if title.endswith('?'):
+                                    title = title[:-1].strip()
+                                result['intents'].extend(['director', 'actor'])
+                                result['entities']['title'] = [title.title()]
+                                result['confidence'] = 0.9
+                                return result
+                
+                # Try to extract title from actor patterns
+                for pattern in keywords.get('actor_title_patterns', []):
+                    import re
+                    match = re.search(pattern, text_lower)
+                    if match:
+                        full_match = match.group(0)
+                        actor_title_phrases = keywords.get('actor_title_phrases', [])
+                        for prefix in actor_title_phrases:
+                            if full_match.startswith(prefix):
+                                title = full_match[len(prefix):].strip()
+                                if title.endswith('?'):
+                                    title = title[:-1].strip()
+                                result['intents'].extend(['director', 'actor'])
+                                result['entities']['title'] = [title.title()]
+                                result['confidence'] = 0.9
+                                return result
+                
+                # Fallback: extract title from the question
+                import re
+                name_pattern = r'\b([A-Z][a-z]+(?:\s[A-Z][a-z]+){1,3})\b'
+                matches = re.findall(name_pattern, question)
+                if matches:
+                    result['intents'].extend(['director', 'actor'])
+                    result['entities']['title'] = [matches[-1].strip().title()]
+                    result['confidence'] = 0.8
+                else:
+                    result['intents'].extend(['director', 'actor'])
+                    result['confidence'] = 0.7
+                return result
+            
+            if has_director_keyword:
+                # Extract title from "who directed X" patterns
+                for pattern in keywords.get('director_title_patterns', []):
+                    import re
+                    match = re.search(pattern, text_lower)
+                    if match:
+                        full_match = match.group(0)
+                        # Use director_title_phrases from config for prefix matching
+                        director_title_phrases = keywords.get('director_title_phrases', [])
+                        for prefix in director_title_phrases:
+                            if full_match.startswith(prefix):
+                                title = full_match[len(prefix):].strip()
+                                if title.endswith('?'):
+                                    title = title[:-1].strip()
+                                result['intents'].append('director')
+                                result['entities']['title'] = [title.title()]  # The movie title we're asking about
+                                result['confidence'] = 0.8
+                                return result
+                
+                # If no specific pattern matched, extract title and return director intent
+                import re
+                name_pattern = r'\b([A-Z][a-z]+(?:\s[A-Z][a-z]+){1,3})\b'
+                matches = re.findall(name_pattern, question)
+                if matches:
+                    result['intents'].append('director')
+                    result['entities']['director'] = [matches[-1].strip().title()]  # Get last name as title
+                    result['confidence'] = 0.7
+                else:
+                    result['intents'].append('director')
+                    result['confidence'] = 0.5
+                return result
+            
+            # Check for actor keywords
+            actor_keywords = keywords.get('actor', [])
+            has_actor_keyword = any(token.text.lower() in actor_keywords for token in doc)
+
+            
+            if has_actor_keyword:
+                # Extract title from "who starred in X" patterns
+                for pattern in keywords.get('actor_title_patterns', []):
+                    import re
+                    match = re.search(pattern, text_lower)
+                    if match:
+                        full_match = match.group(0)
+                        # Use actor_title_phrases from config for prefix matching
+                        actor_title_phrases = keywords.get('actor_title_phrases', [])
+                        for prefix in actor_title_phrases:
+                            if full_match.startswith(prefix):
+                                title = full_match[len(prefix):].strip()
+                                if title.endswith('?'):
+                                    title = title[:-1].strip()
+                                result['intents'].append('actor')
+                                result['entities']['title'] = [title.title()]
+                                result['confidence'] = 0.8
+                                return result
+                
+                # If no specific pattern matched, extract title and return actor intent
+                import re
+                name_pattern = r'\b([A-Z][a-z]+(?:\s[A-Z][a-z]+){1,3})\b'
+                matches = re.findall(name_pattern, question)
+                if matches:
+                    result['intents'].append('actor')
+                    result['entities']['actor'] = [matches[-1].strip().title()]  # Get last name as actor
+                    result['confidence'] = 0.7
+                else:
+                    result['intents'].append('actor')
+                    result['confidence'] = 0.5
+                return result
+        
+        # Check for rating questions
+        rating_question_prefixes = keywords.get('rating_question_prefixes', [])
+        if any(phrase in text_lower for phrase in rating_question_prefixes):
+            # Extract title from rating questions like "What is the rating of X?"
+            # Use patterns from language config
+            import re
+            rating_patterns = keywords.get('rating_question_patterns', [])
+            for pattern in rating_patterns:
+                match = re.search(pattern, text_lower, re.IGNORECASE)
+                if match:
+                    full_match = match.group(0)
+                    rating_title_phrases = keywords.get('rating_title_phrases', [
+                        'qual a avaliação de ', 'qual a nota de ',
+                        'what is the rating of ', 'what is the score of '
+                    ])
+                    for prefix in rating_title_phrases:
+                        if full_match.startswith(prefix):
+                            title = full_match[len(prefix):].strip()
+                            if title.endswith('?'):
+                                title = title[:-1].strip()
+                            result['intents'].append('rating')
+                            result['entities']['title'] = [title.title()]
+                            result['confidence'] = 0.8
+                            return result
+            
+            # Fallback: extract title from the question
+            import re
+            name_pattern = r'\b([A-Z][a-z]+(?:\s[A-Z][a-z]+){1,3})\b'
+            matches = re.findall(name_pattern, question)
+            if matches:
+                result['intents'].append('rating')
+                result['entities']['title'] = [matches[-1].strip().title()]
+                result['confidence'] = 0.7
+            else:
+                result['intents'].append('rating')
+                result['confidence'] = 0.5
+            return result
+        
+        # Check for director + actor combined queries FIRST (before any other pattern checks)
+        combined_keywords = keywords.get('combined_query_keywords', {})
+        director_keywords_combined = combined_keywords.get('director', [])
+        actor_keywords_combined = combined_keywords.get('actor', [])
+        
+        has_director_combined = any(keyword in text_lower for keyword in director_keywords_combined)
+        has_actor_combined = any(keyword in text_lower for keyword in actor_keywords_combined)
+        
+        if has_director_combined and has_actor_combined:
+            import re
+            name_pattern = r'\b([A-Z][a-z]+(?:\s[A-Z][a-z]+){1,3})\b'
+            matches = re.findall(name_pattern, question)
+            if len(matches) >= 2:
+                result['intents'].append('title')
+                result['entities']['director'] = [matches[0].strip()]
+                result['entities']['actor'] = [matches[1].strip()]
+                result['confidence'] = 0.9
+                return result
+            else:
+                # If we don't get 2 matches, fall back to title intent with what we have
+                if matches:
+                    result['intents'].append('title')
+                    result['entities']['title'] = [matches[-1].strip()]
+                    result['confidence'] = 0.7
+                    return result
+         
+        # Check for "directed by" patterns (looking for movies by director)
+        directed_by_phrases = keywords.get('directed_by_phrases', [])
+        if any(phrase in text_lower for phrase in directed_by_phrases):
+            # Extract the director name - get the name AFTER "directed by"
+            import re
+            # Extract everything after "directed by" or similar phrases
+            director_name = None
+            for phrase in ['directed by ', 'dirigidos por ', 'dirigido por ']:
+                if phrase in text_lower:
+                    start_idx = text_lower.find(phrase) + len(phrase)
+                    director_name = question[start_idx:].strip()
+                    # Remove trailing question mark if present
+                    if director_name.endswith('?'):
+                        director_name = director_name[:-1].strip()
+                    break
+            
+            if director_name:
+                result['intents'].append('title')
+                result['entities']['director'] = [director_name]
+                result['confidence'] = 0.8
+                return result
+            
+            # Fallback to regex if phrase matching fails
+            name_pattern = r'\b([A-Z][a-z]+(?:\s[A-Z][a-z]+){1,3})\b'
+            matches = re.findall(name_pattern, question)
+            if matches:
+                result['intents'].append('title')
+                result['entities']['director'] = [matches[0].strip()]
+                result['confidence'] = 0.8
+                return result
+        
+        # Check if this contains actor/director keywords but isn't a "who" question
+        # This handles cases like "Filmes protagonizados por X" which should return title intent
+        # because we're looking for movies that have X as actor, not asking about X
+        actor_keywords = keywords.get('actor', [])
+        director_keywords = keywords.get('director', [])
+        
+        # Check for actor/director keywords in tokens OR in the full text (for multi-word phrases)
+        has_actor_keyword = any(token.text.lower() in actor_keywords for token in doc) or \
+                           any(keyword in text_lower for keyword in actor_keywords if len(keyword.split()) > 1)
+        has_director_keyword = any(token.text.lower() in director_keywords for token in doc) or \
+                              any(keyword in text_lower for keyword in director_keywords if len(keyword.split()) > 1)
+        
+        # Removed the logic that was intercepting actor/director queries
+        # The specific logic for starring_phrases and directed_by_phrases will handle these cases
+         
+        # Check for "starring" patterns (looking for movies by actor)
+        starring_phrases = keywords.get('starring_phrases', [])
+        for phrase in starring_phrases:
+            if phrase in text_lower:
+                # Extract the actor name
+                import re
+                name_pattern = r'\b([A-Z][a-z]+(?:\s[A-Z][a-z]+){1,3})\b'
+                matches = re.findall(name_pattern, question)
+                if matches:
+                    result['intents'].append('title')  # Intention is to find movies (title) with this actor
+                    result['entities']['actor'] = [matches[0].strip()]  # But the entity is the actor
+                    result['confidence'] = 0.8
+                    return result
+                    break
+        
+        title_in_title_phrases = keywords.get('title_in_title_phrases', [])
+        for pattern in title_in_title_phrases:
+            import re
+            match = re.search(pattern, text_lower)
+            if match:
+                full_match = match.group(0)
+                title_text = None
+                
+                # Handle Portuguese pattern: "com X no título"
+                if full_match.startswith('com ') and (' no título' in full_match or ' no nome' in full_match):
+                    start_idx = 4
+                    end_phrase = ' no título' if ' no título' in full_match else ' no nome'
+                    end_idx = full_match.find(end_phrase)
+                    if end_idx > start_idx:
+                        title_text = full_match[start_idx:end_idx].strip()
+                
+                # Handle English pattern: "with X in the title"
+                elif 'with ' in full_match and ' in the title' in full_match:
+                    start_idx = full_match.find('with ') + 5  # Skip "with "
+                    end_idx = full_match.find(' in the title')
+                    if end_idx > start_idx:
+                        title_text = full_match[start_idx:end_idx].strip()
+                
+                if title_text:
+                    title_capitalized = title_text.capitalize()
+                    result['intents'].append('title')
+                    result['entities']['title'] = [title_capitalized]
+                    result['confidence'] = 0.8
+                    return result
+        
+        # Default: most queries are looking for movie titles
+        result['intents'].append('title')
+        
+        # Extract person names for title queries
+        import re
+        name_pattern = r'\b([A-Z][a-z]+(?:\s[A-Z][a-z]+){1,3})\b'
+        matches = re.findall(name_pattern, question)
+        person_names = [match.strip() for match in matches]
+        
+        # Check if this is an actor/director query that wasn't caught by earlier patterns
+        has_actor_keyword = any(keyword in text_lower for keyword in actor_keywords)
+        has_director_keyword = any(keyword in text_lower for keyword in director_keywords)
+        
+        if has_actor_keyword and has_director_keyword and len(person_names) >= 2:
+            # Both actor and director mentioned
+            result['entities']['director'] = [person_names[0]]
+            result['entities']['actor'] = [person_names[1]]
+            result['confidence'] = 0.8
+        elif has_director_keyword and person_names:
+            # Only director mentioned
+            result['entities']['director'] = person_names
+            result['confidence'] = 0.8
+        elif has_actor_keyword and person_names:
+            # Only actor mentioned
+            # Intention is to find movies (title) with this actor - intent already set above
+            result['entities']['actor'] = person_names  # But the entity is the actor
+            result['confidence'] = 0.8
+        elif person_names:
+            # Generic title search with person names
+            result['entities']['title'] = person_names
+            result['confidence'] = 0.7
+        else:
+            result['confidence'] = 0.5
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error classifying intents: {e}")
+        return {
+            'intents': ['unknown'],
+            'entities': {},
+            'language': language,
+            'confidence': 0.0
+        }
+
+@app.on_event("startup")
+def startup_event():
+    """Startup event to load models"""
+    load_spacy_models()
+
+@app.get("/")
+def read_root():
+    """Root endpoint"""
+    return {"message": "ML Microservice API", "status": "running"}
+
+@app.post("/classify-intent", response_model=IntentResponse)
+def classify_intent_endpoint(request: QuestionRequest):
+    """Classify intents from user question"""
+    try:
+        language = detect_language(request.question)
+        result = classify_intents(request.question, language)
+        return result
+    except Exception as e:
+        logger.error(f"Error in classify_intent endpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/extract-entities", response_model=EntityResponse)
+def extract_entities_endpoint(request: QuestionRequest):
+    """Extract entities from user question"""
+    try:
+        language = detect_language(request.question)
+        result = classify_intents(request.question, language)
+        
+        return {
+            'entities': result['entities'],
+            'language': result['language']
+        }
+    except Exception as e:
+        logger.error(f"Error in extract_entities endpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/recommend", response_model=RecommendationResponse)
+def recommend_endpoint(request: RecommendationRequest):
+    """Get movie recommendations"""
+    try:
+        # Mock recommendations - in production this would connect to recommendation system
+        recommendations = [
+            {
+                'title': 'The Shawshank Redemption',
+                'year': 1994,
+                'genre': 'Drama',
+                'rating': 4.8,
+                'director': 'Frank Darabont'
+            },
+            {
+                'title': 'The Godfather',
+                'year': 1972,
+                'genre': 'Crime',
+                'rating': 4.7,
+                'director': 'Francis Ford Coppola'
+            }
+        ]
+        
+        return {
+            'recommendations': recommendations,
+            'user_id': request.user_id
+        }
+    except Exception as e:
+        logger.error(f"Error in recommend endpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8001,
+        log_level="info"
+    )

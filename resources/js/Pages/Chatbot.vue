@@ -89,7 +89,7 @@ const askExemples = [
     'Recommend some popular movies',
     'Quem dirigiu Mad Max?',
     'Movies starring Will Ferrell',
-    'Quais filmes estrelados por Ryan Gosling?',
+    'Quais filmes protagonizados por Ryan Gosling?',
     'Filmes com Love no título',
     'What movies should I watch?'
 ];
@@ -126,68 +126,6 @@ onMounted(() => {
 const useExample = (example) => {
     question.value = example;
 };
-
-// Training functionality
-const isTraining = ref(false);
-const trainingStatus = ref('');
-
-const trainModel = async () => {
-    try {
-        isTraining.value = true;
-        trainingStatus.value = trans('Checking existing model...');
-        
-        // First check if model file exists
-        const checkResponse = await apiRequest('/api/nlp-chatbot/check-model');
-        
-        if (checkResponse.ok) {
-            const { exists } = await checkResponse.json();
-            
-            if (exists) {
-                trainingStatus.value = trans('Existing model found. Deleting...');
-                
-                // Delete existing model
-                const deleteResponse = await apiRequest('/api/nlp-chatbot/delete-model', {
-                    method: 'DELETE'
-                });
-                
-                if (!deleteResponse.ok) {
-                    throw new Error(trans('Failed to delete existing model'));
-                }
-            }
-            
-            trainingStatus.value = trans('Training new model...');
-            
-            // Train new model
-            const trainResponse = await apiRequest('/api/nlp-chatbot/train', {
-                method: 'POST'
-            });
-            
-            if (trainResponse.ok) {
-                const result = await trainResponse.json();
-                trainingStatus.value = trans('Training completed successfully! Model: ') + result.model_path;
-                
-                // Auto-clear status after 5 seconds
-                setTimeout(() => {
-                    trainingStatus.value = '';
-                }, 5000);
-            } else {
-                throw new Error(trans('Training failed'));
-            }
-        } else {
-            throw new Error(trans('Failed to check model status'));
-        }
-    } catch (error) {
-        console.error('Training error:', error);
-        trainingStatus.value = trans('Training error: ') + error.message;
-        
-        // Auto-clear error after 5 seconds
-        setTimeout(() => {
-            trainingStatus.value = '';
-        }, 5000);
-    } finally {
-        isTraining.value = false;
-    }
-};
 </script>
 
 <template>
@@ -196,27 +134,6 @@ const trainModel = async () => {
             <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900 dark:text-gray-100">
-                        <div class="flex gap-2 mb-4">
-                            <button 
-                                @click="trainModel" 
-                                class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors" 
-                                :disabled="isTraining"
-                                :title="trans('Train NLP Model')"
-                            >
-                                <span v-if="!isTraining">🤖 {{ trans('Train') }}</span>
-                                <span v-else class="flex items-center">
-                                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    {{ trans('Training...') }}
-                                </span>
-                            </button>
-                        </div>
-                        <!-- Training status display -->
-                        <div v-if="trainingStatus" class="mb-4 p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 text-sm rounded-lg">
-                            {{ trainingStatus }}
-                        </div>
                         <div class="mb-6">
                             <h3 class="text-lg font-medium mb-2">{{ trans('Ask about movies, actors or directors (with NLP):') }}</h3>
                             

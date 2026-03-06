@@ -2,6 +2,13 @@
 
 return [
     /**
+     * Microservice Configuration
+     */
+    'microservice_url' => env('ML_MICROSERVICE_URL', 'http://localhost:8001'),
+    'microservice_timeout' => env('ML_MICROSERVICE_TIMEOUT', 30),
+    'microservice_cache_ttl' => env('ML_MICROSERVICE_CACHE_TTL', 3600),
+
+    /**
      * Global Model Path Configuration
      */
     'model_path' => env('ML_MODEL_PATH', 'app/ml.model'),

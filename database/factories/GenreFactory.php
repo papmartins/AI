@@ -16,8 +16,11 @@ class GenreFactory extends Factory
      */
     public function definition(): array
     {
+        $englishName = $this->faker->unique()->word . ' Movies';
         return [
-            'name' => $this->faker->unique()->word . ' Movies',
+            'name_en' => $englishName,
+            'name_pt' => $englishName . ' (PT)',
+            'name_es' => $englishName . ' (ES)',
         ];
     }
 }

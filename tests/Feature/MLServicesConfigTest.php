@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use App\Services\IntentClassifierService;
 use App\Services\IrisClassifier;
 use App\Services\MovieRecommender;
 use App\Services\AnomalyDetector;
@@ -16,12 +15,7 @@ class MLServicesConfigTest extends TestCase
     
     #[Test]
     public function test_all_services_use_config()
-    {
-        // Test NLP Chatbot Service
-        $nlpService = new IntentClassifierService();
-        $nlpPath = $nlpService->getModelPath();
-        $this->assertStringContainsString('nlp_intention_classifier.model', $nlpPath);
-        
+    {        
         // Test Iris Classifier Service
         $irisService = new IrisClassifier();
         $irisModelPath = $this->getPrivateProperty($irisService, 'modelPath');
@@ -114,23 +108,7 @@ class MLServicesConfigTest extends TestCase
         $this->assertNotEmpty(env('MOVIE_RECOMMENDER_MODEL_PATH'));
         $this->assertNotEmpty(env('ANOMALY_DETECTOR_MODEL_PATH'));
     }
-    
-    #[Test]
-    public function test_directory_creation_for_model_saving()
-    {
-        // Test that the service can handle directory creation
-        $service = new IntentClassifierService();
-        $modelPath = $service->getModelPath();
-        $directory = dirname($modelPath);
         
-        // Directory should either exist or be creatable
-        if (!is_dir($directory)) {
-            $this->assertTrue(is_writable(dirname($directory)), 'Parent directory should be writable');
-        } else {
-            $this->assertTrue(is_writable($directory), 'Model directory should be writable');
-        }
-    }
-    
     /**
      * Helper method to access private properties for testing
      */
@@ -138,7 +116,6 @@ class MLServicesConfigTest extends TestCase
     {
         $reflection = new \ReflectionClass($object);
         $property = $reflection->getProperty($propertyName);
-        $property->setAccessible(true);
         return $property->getValue($object);
     }
 }

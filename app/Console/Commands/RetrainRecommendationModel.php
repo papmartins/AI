@@ -49,6 +49,13 @@ class RetrainRecommendationModel extends Command
             $this->info('Removed existing metadata file');
         }
         
+        // Pre-calculate movie features first
+        $this->info('Pre-calculating movie features...');
+        $featuresStart = microtime(true);
+        $features = $recommender->precalculateAndCacheMovieFeatures();
+        $featuresTime = round(microtime(true) - $featuresStart, 2);
+        $this->info("✓ Pre-calculated features for " . count($features) . " movies in {$featuresTime} seconds");
+        
         // Train new model
         $this->info('Training new model...');
         $startTime = microtime(true);

@@ -69,6 +69,7 @@ services:
       - WORKERS=4
     volumes:
       - ./ml_service/src:/app/src
+      - ./ml_service/config:/app/config
       - ./ml_service/models:/app/models
     # restart: unless-stopped
     healthcheck:

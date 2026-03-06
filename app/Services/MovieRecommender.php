@@ -20,6 +20,7 @@ use App\Models\Rental;
 use App\Models\Wishlist;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class MovieRecommender
 {
@@ -37,12 +38,157 @@ class MovieRecommender
     }
     
     /**
+     * Get pre-calculated movie features from cache
+     */
+    protected function getPrecalculatedMovieFeatures(): array
+    {
+        $cacheKey = 'precalculated_movie_features_v2';
+        return Cache::get($cacheKey, []);
+    }
+    
+    /**
+     * Pre-calculate and cache movie features for faster recommendations
+     * This avoids recalculating features for every recommendation request
+     */
+    public function precalculateAndCacheMovieFeatures(): array
+    {
+        $cacheKey = 'precalculated_movie_features_v2';
+        
+        // Return cached features if available and recent
+        if (Cache::has($cacheKey)) {
+            return Cache::get($cacheKey);
+        }
+        
+        
+        // Load all data at once with eager loading to avoid N+1 queries
+        $ratings = Rating::with(['user', 'movie'])->get();
+        $rentals = Rental::get();
+        $users = User::all();
+        $movies = Movie::with('genre')->get();
+        
+        $movieFeatures = [];
+        $movieMetadata = [];
+        $totalUsers = $users->count();
+        
+        // Pre-calculate movie statistics for efficiency
+        $movieStats = [];
+        foreach ($ratings as $rating) {
+            $movieId = $rating->movie_id;
+            if (!isset($movieStats[$movieId])) {
+                $movieStats[$movieId] = [
+                    'ratings' => [],
+                    'good_ratings' => [],
+                    'rentals' => [],
+                    'user_ages' => []
+                ];
+            }
+            $movieStats[$movieId]['ratings'][] = $rating->rating;
+            $movieStats[$movieId]['user_ages'][] = $rating->user->age ?? 18;
+            
+            if ($rating->rating > 3.5) {
+                $movieStats[$movieId]['good_ratings'][] = $rating->rating;
+            }
+        }
+        
+        foreach ($rentals as $rental) {
+            $movieId = $rental->movie_id;
+            if (!isset($movieStats[$movieId])) {
+                $movieStats[$movieId] = [
+                    'ratings' => [],
+                    'good_ratings' => [],
+                    'rentals' => [],
+                    'user_ages' => []
+                ];
+            }
+            $movieStats[$movieId]['rentals'][] = $rental->user_id;
+        }
+        
+        // Calculate features for each movie
+        foreach ($movies as $movie) {
+            $movieId = $movie->id;
+            $stats = $movieStats[$movieId] ?? ['ratings' => [], 'good_ratings' => [], 'rentals' => [], 'user_ages' => []];
+            
+            // Feature 1: Rental percentage (0-1)
+            $rentalPercentage = count($stats['rentals']) / max(1, $totalUsers);
+            
+            // Feature 2: Average rental age (normalized)
+            $avgRentalAge = !empty($stats['user_ages']) ? array_sum($stats['user_ages']) / count($stats['user_ages']) : 18;
+            $avgRentalAge = min(1, max(0, ($avgRentalAge - 18) / 50)); // Normalize to 0-1 range
+            
+            // Feature 3: Average rating (normalized)
+            $avgRating = !empty($stats['ratings']) ? array_sum($stats['ratings']) / count($stats['ratings']) : 0;
+            $avgRating = min(1, max(0, $avgRating / 5)); // Normalize to 0-1 range
+            
+            // Feature 4: Average good rating age (normalized)
+            $goodRatingAges = [];
+            foreach ($stats['ratings'] as $index => $rating) {
+                if ($rating > 3.5 && isset($stats['user_ages'][$index])) {
+                    $goodRatingAges[] = $stats['user_ages'][$index];
+                }
+            }
+            $avgGoodRatingAge = !empty($goodRatingAges) ? array_sum($goodRatingAges) / count($goodRatingAges) : 18;
+            $avgGoodRatingAge = min(1, max(0, ($avgGoodRatingAge - 18) / 50)); // Normalize to 0-1 range
+            
+            // Store pre-calculated features
+            $movieFeatures[$movieId] = [
+                'rental_percentage' => $rentalPercentage,
+                'avg_rental_age' => $avgRentalAge,
+                'avg_rating' => $avgRating,
+                'avg_good_rating_age' => $avgGoodRatingAge,
+                'genre_id' => $movie->genre_id,
+                'year' => $movie->year,
+                'title' => $movie->title
+            ];
+            
+            // Store metadata for reference
+            $movieMetadata[$movieId] = [
+                'title' => $movie->title,
+                'genre' => $movie->genre->name ?? 'Unknown',
+                'year' => $movie->year,
+                'rating_count' => count($stats['ratings']),
+                'rental_count' => count($stats['rentals']),
+                'avg_rating' => $avgRating * 5 // Denormalize for display
+            ];
+        }
+        
+        // Cache features for 24 hours or until next model training
+        Cache::put($cacheKey, $movieFeatures, 86400);
+        
+        // Also store metadata
+        file_put_contents($this->metadataPath, json_encode($movieMetadata, JSON_PRETTY_PRINT));
+        
+        return $movieFeatures;
+    }
+    
+    /**
      * Prepare dataset from user interactions
      * Uses demographic and popularity features for KNN compatibility
      */
     protected function prepareDataset(): void
     {
-        // Load all data at once with eager loading to avoid N+1 queries
+        // Get pre-calculated features if available
+        $precalculatedFeatures = $this->getPrecalculatedMovieFeatures();
+        
+        if (!empty($precalculatedFeatures)) {
+            // Use pre-calculated features for faster dataset preparation
+            $csvData = [];
+            $csvData[] = ['movie_id', 'rental_percentage', 'avg_rental_age', 'avg_rating', 'avg_good_rating_age'];
+            
+            foreach ($precalculatedFeatures as $movieId => $features) {
+                $csvData[] = [
+                    $movieId,
+                    $features['rental_percentage'],
+                    $features['avg_rental_age'],
+                    $features['avg_rating'],
+                    $features['avg_good_rating_age']
+                ];
+            }
+            
+            $this->writeCSV($csvData);
+            return;
+        }
+        
+        // Fallback to original implementation if no pre-calculated features
         $ratings = Rating::with(['user', 'movie'])->get();
         $rentals = Rental::get();
         $users = User::all();
@@ -215,11 +361,14 @@ class MovieRecommender
         $estimator->train($dataset);
         $estimator->save();
         
+        // Pre-calculate and cache movie features for faster recommendations
+        $this->precalculateAndCacheMovieFeatures();
+        
         // Generate and cache popularity confidence scores
         $this->cachePopularityConfidence();
         
         // Clear all user recommendation caches since model changed
-        \Log::info('Clearing recommendation caches after model training');
+        Log::info('Clearing recommendation caches after model training');
         $this->clearAllCaches();
         
         return $estimator;
@@ -231,14 +380,14 @@ class MovieRecommender
     protected function loadOrTrain(): PersistentModel
     {
         $startTime = microtime(true);
-        \Log::info('Loading or training model...');
+        Log::info('Loading or training model...');
         
         // Check if model file exists but has wrong number of features
         // Force retraining if we changed from 5 to 4 features
         $forceRetrain = false;
         
         if (file_exists($this->modelPath)) {
-            \Log::info('Model file exists, checking compatibility...');
+            Log::info('Model file exists, checking compatibility...');
             
             // Check the CSV headers to see if we have the right number of features
             if (file_exists($this->datasetPath)) {
@@ -251,14 +400,14 @@ class MovieRecommender
                 $expectedFeatureCount = 4; // rental_percentage, avg_rental_age, avg_rating, avg_good_rating_age
                 $actualFeatureCount = count($headers) - 2; // subtract movie_id and rating
                 
-                \Log::info('Feature count verification', [
+                Log::info('Feature count verification', [
                     'expected_features' => $expectedFeatureCount,
                     'actual_features' => $actualFeatureCount,
                     'headers' => $headers
                 ]);
                 
                 if ($actualFeatureCount != $expectedFeatureCount) {
-                    \Log::warning('Feature count mismatch, forcing model retraining', [
+                    Log::warning('Feature count mismatch, forcing model retraining', [
                         'expected_features' => $expectedFeatureCount,
                         'actual_features' => $actualFeatureCount,
                         'headers' => $headers
@@ -267,16 +416,16 @@ class MovieRecommender
                 }
             }
         } else {
-            \Log::info('No existing model file found');
+            Log::info('No existing model file found');
         }
         
         if (file_exists($this->modelPath) && !$forceRetrain) {
-            \Log::info('Loading existing model from: ' . $this->modelPath);
+            Log::info('Loading existing model from: ' . $this->modelPath);
             
             // Get file info
             $fileSize = filesize($this->modelPath);
             $fileSizeKB = round($fileSize / 1024, 2);
-            \Log::info('Model file info', [
+            Log::info('Model file info', [
                 'size_bytes' => $fileSize,
                 'size_kb' => $fileSizeKB,
                 'last_modified' => date('Y-m-d H:i:s', filemtime($this->modelPath))
@@ -285,7 +434,7 @@ class MovieRecommender
             $loadStart = microtime(true);
             $estimator = PersistentModel::load(new Filesystem($this->modelPath));
             $loadTime = round(microtime(true) - $loadStart, 2);
-            \Log::info("Model loaded in {$loadTime} seconds");
+            Log::info("Model loaded in {$loadTime} seconds");
             
             // Try to get model info if available
             try {
@@ -294,27 +443,27 @@ class MovieRecommender
                     'k_neighbors' => 10, // Default value
                     'distance_metric' => 'Cosine'
                 ];
-                \Log::info('Model information', $modelInfo);
+                Log::info('Model information', $modelInfo);
             } catch (\Exception $e) {
-                \Log::warning('Could not get detailed model info: ' . $e->getMessage());
+                Log::warning('Could not get detailed model info: ' . $e->getMessage());
             }
             
         } else {
-            \Log::info('Training new model...');
+            Log::info('Training new model...');
             // Remove old model if forcing retrain
             if ($forceRetrain && file_exists($this->modelPath)) {
                 unlink($this->modelPath);
-                \Log::info('Removed old model file');
+                Log::info('Removed old model file');
             }
             
             $trainStart = microtime(true);
             $estimator = $this->train();
             $trainTime = round(microtime(true) - $trainStart, 2);
-            \Log::info("Model trained in {$trainTime} seconds");
+            Log::info("Model trained in {$trainTime} seconds");
         }
         
         $totalTime = round(microtime(true) - $startTime, 2);
-        \Log::info("Model load/train completed in {$totalTime} seconds");
+        Log::info("Model load/train completed in {$totalTime} seconds");
         
         return $estimator;
     }
@@ -328,7 +477,7 @@ class MovieRecommender
         $cacheKey = $this->getCacheKey($user, $limit);
         $isFrequent = $this->isFrequentUser($user);
         
-        \Log::info('Recommendation request', [
+        Log::info('Recommendation request', [
             'user_id' => $user->id,
             'is_frequent' => $isFrequent,
             'cache_key' => $cacheKey,
@@ -337,19 +486,19 @@ class MovieRecommender
         
         // Try to get cached recommendations for frequent users
         if ($isFrequent && Cache::has($cacheKey)) {
-            \Log::info('Returning cached recommendations for user ' . $user->id);
+            Log::info('Returning cached recommendations for user ' . $user->id);
             return Cache::get($cacheKey);
         }
         
         try {
-            \Log::info('Generating new recommendations for user ' . $user->id);
+            Log::info('Generating new recommendations for user ' . $user->id);
             // Use Rubix ML model for predictions
             $recommendations = $this->getMLBasedRecommendations($user, $limit);
             
             // Cache recommendations for frequent users (30 minutes)
             if ($isFrequent) {
                 Cache::put($cacheKey, $recommendations, now()->addMinutes(30));
-                \Log::info('Cached recommendations for user ' . $user->id);
+                Log::info('Cached recommendations for user ' . $user->id);
             }
             
             return $recommendations;
@@ -374,20 +523,20 @@ class MovieRecommender
     protected function getMLBasedRecommendations(User $user, int $limit = 6): array
     {
         $startTime = microtime(true);
-        \Log::info('Starting ML recommendations generation');
+        Log::info('Starting ML recommendations generation');
         
         // Check if we have enough movies and ratings for ML recommendations
         $totalMovies = Movie::count();
         $totalRatings = Rating::count();
         
-        \Log::info('Data availability check', [
+        Log::info('Data availability check', [
             'total_movies' => $totalMovies,
             'total_ratings' => $totalRatings
         ]);
         
         // If not enough data, fall back to popular recommendations
         if ($totalMovies < 5 || $totalRatings < 10) {
-            \Log::warning('Not enough data for ML recommendations, falling back to popular');
+            Log::warning('Not enough data for ML recommendations, falling back to popular');
             return $this->getFallbackRecommendations($user, $limit);
         }
         
@@ -408,70 +557,151 @@ class MovieRecommender
         // Get user's age for demographic filtering
         $userAge = $user->age ?? 18;
         
-        // Get all movies and create predictions
-        $allMovies = Movie::with('genre')
-            ->withAvg('ratings', 'rating')
-            ->withCount('rentals')
-            ->get();
+        // Use pre-calculated features for faster recommendations
+        $precalculatedFeatures = $this->getPrecalculatedMovieFeatures();
         
-        $predictions = [];
-        // Debug: log user info
-        \Log::info('Starting ML recommendations for user', [
-            'user_id' => $user->id,
-            'user_age' => $user->age,
-            'interacted_movie_ids' => $interactedMovieIds
-        ]);        
-        
-        foreach ($allMovies as $movie) {
-            // Skip movies user has already interacted with
-            if (in_array($movie->id, $interactedMovieIds)) {
-                continue;
-            }
+        if (!empty($precalculatedFeatures)) {
+            Log::info('Using pre-calculated movie features for recommendations');
             
-            try {
-                // 1. Age rating filter - exclude movies not suitable for user's age
-                $movieAgeRating = $movie->age_rating ?? 0;
-                if ($userAge < $movieAgeRating) {
-                    continue; // Exclude movies not suitable for user's age
+            $predictions = [];
+            
+            foreach ($precalculatedFeatures as $movieId => $features) {
+                // Skip movies user has already interacted with
+                if (in_array($movieId, $interactedMovieIds)) {
+                    continue;
                 }
                 
-                // Create feature vector with raw values as requested:
-                // [rental_percentage, avg_rental_age, avg_rating, avg_good_rating_age]
-                $features = [
-                    1, //rental_percentage we want the best possible rating, so we set this to 1 to indicate it's a feature we want to maximize
-                    $userAge,
-                    1, //avg_rating we want the best possible rating, so we set this to 1 to indicate it's a feature we want to maximize
-                    $userAge
-                ];
+                try {
+                    // Get movie details
+                    $movie = Movie::with(['genre'])->find($movieId);
+
+                    if (!$movie) continue;
+                    
+                    // 1. Age rating filter - exclude movies not suitable for user's age
+                    $movieAgeRating = $movie->age_rating ?? 0;
+                    if ($userAge < $movieAgeRating) {
+                        continue; // Exclude movies not suitable for user's age
+                    }
+                    
+                    // Use pre-calculated features directly
+                    // [rental_percentage, avg_rental_age, avg_rating, avg_good_rating_age]
+                    $featureVector = [
+                        $features['rental_percentage'],
+                        $features['avg_rental_age'],
+                        $features['avg_rating'],
+                        $features['avg_good_rating_age']
+                    ];
+                    
+                    // Create Unlabeled dataset for prediction
+                    $sampleDataset = Unlabeled::build([$featureVector]);
+                    
+                    // Make prediction
+                    $predictedRatings = $estimator->predict($sampleDataset);
+                    $predictedRating = $predictedRatings[0] ?? 3;
+                    
+                    // Clamp to valid rating range (1-5)
+                    $predictedRating = max(1, min(5, $predictedRating));
+                    
+                    $predictions[] = [
+                        'movie' => $movie,
+                        'predicted_rating' => $predictedRating,
+                        'confidence' => $this->calculatePredictionConfidence($movie, $predictedRating),
+                        'algorithm' => 'rubix_ml_knn',
+                        'features' => [
+                            'rental_percentage' => $features['rental_percentage'],
+                            'rented_age_avg' => $features['avg_rental_age'],
+                            'rating_avg' => $features['avg_rating'],
+                            'rating_age_avg' => $features['avg_good_rating_age']
+                        ]
+                    ];
+                    
+                } catch (\Exception $e) {
+                    Log::error('Error predicting rating for movie ' . $movieId . ': ' . $e->getMessage());
+                    // Skip this movie if prediction fails
+                    continue;
+                }
+            }
+            
+            // Sort by predicted rating (descending)
+            usort($predictions, function($a, $b) {
+                return $b['predicted_rating'] <=> $a['predicted_rating'];
+            });
+            $result = array_slice($predictions, 0, $limit);
+            
+            $endTime = microtime(true);
+            $executionTime = round($endTime - $startTime, 2);
+            
+            Log::info('ML recommendations result with pre-calculated features', [
+                'total_predictions' => count($predictions),
+                'returned_count' => count($result),
+                'execution_time_seconds' => $executionTime,
+                'used_cache' => true
+            ]);
+            
+            return $result;
+            
+        } else {
+            // Fallback to original implementation if no pre-calculated features
+            Log::info('No pre-calculated features found, using real-time calculation');
+            
+            $allMovies = Movie::with('genre')
+                ->withAvg('ratings', 'rating')
+                ->withCount('rentals')
+                ->get();
+            
+            $predictions = [];
+            
+            foreach ($allMovies as $movie) {
+                // Skip movies user has already interacted with
+                if (in_array($movie->id, $interactedMovieIds)) {
+                    continue;
+                }
                 
-                // Create Unlabeled dataset for prediction
-                $sampleDataset = Unlabeled::build([$features]);
+                try {
+                    // 1. Age rating filter - exclude movies not suitable for user's age
+                    $movieAgeRating = $movie->age_rating ?? 0;
+                    if ($userAge < $movieAgeRating) {
+                        continue; // Exclude movies not suitable for user's age
+                    }
+                    
+                    // Create feature vector with raw values as requested:
+                    // [rental_percentage, avg_rental_age, avg_rating, avg_good_rating_age]
+                    $features = [
+                        1, //rental_percentage we want the best possible rating, so we set this to 1 to indicate it's a feature we want to maximize
+                        $userAge,
+                        1, //avg_rating we want the best possible rating, so we set this to 1 to indicate it's a feature we want to maximize
+                        $userAge
+                    ];
                 
-                // dd($sampleDataset);
-                // Make prediction
-                $predictedRatings = $estimator->predict($sampleDataset);
-                $predictedRating = $predictedRatings[0] ?? 3;
+                    // Create Unlabeled dataset for prediction
+                    $sampleDataset = Unlabeled::build([$features]);
+                    
+                    // dd($sampleDataset);
+                    // Make prediction
+                    $predictedRatings = $estimator->predict($sampleDataset);
+                    $predictedRating = $predictedRatings[0] ?? 3;
+                    
+                    // Clamp to valid rating range (1-5)
+                    $predictedRating = max(1, min(5, $predictedRating));
+                    
+                    $predictions[] = [
+                        'movie' => $movie,
+                        'predicted_rating' => $predictedRating,
+                        'confidence' => $this->calculatePredictionConfidence($movie, $predictedRating),
+                        'algorithm' => 'rubix_ml_knn',
+                        'features' => [
+                            'rental_percentage' => 1,
+                            'rented_age_avg' => $userAge,
+                            'rating_avg' => 1,
+                            'rating_age_avg' => $userAge
+                        ]
+                    ];
                 
-                // Clamp to valid rating range (1-5)
-                $predictedRating = max(1, min(5, $predictedRating));
-                
-                $predictions[] = [
-                    'movie' => $movie,
-                    'predicted_rating' => $predictedRating,
-                    'confidence' => $this->calculatePredictionConfidence($movie, $predictedRating),
-                    'algorithm' => 'rubix_ml_knn',
-                    'features' => [
-                        'rental_percentage' => 1,
-                        'rented_age_avg' => $userAge,
-                        'rating_avg' => 1,
-                        'rating_age_avg' => $userAge
-                    ]
-                ];
-                
-            } catch (\Exception $e) {
-                \Log::error('Error predicting rating for movie ' . $movie->id . ': ' . $e->getMessage());
-                // Skip this movie if prediction fails
-                continue;
+                } catch (\Exception $e) {
+                    Log::error('Error predicting rating for movie ' . $movie->id . ': ' . $e->getMessage());
+                    // Skip this movie if prediction fails
+                    continue;
+                }
             }
         }
         // Sort by predicted rating (descending)
@@ -483,7 +713,7 @@ class MovieRecommender
         $endTime = microtime(true);
         $executionTime = round($endTime - $startTime, 2);
         
-        \Log::info('ML recommendations result', [
+        Log::info('ML recommendations result', [
             'total_predictions' => count($predictions),
             'returned_count' => count($result),
             'execution_time_seconds' => $executionTime,
@@ -492,7 +722,7 @@ class MovieRecommender
             }, $result)
         ]);
         
-        \Log::info("ML recommendations generated in {$executionTime} seconds");
+        Log::info("ML recommendations generated in {$executionTime} seconds");
         
         return $result;
     }
@@ -621,77 +851,116 @@ class MovieRecommender
      */
     public function getPopularRecommendations(int $limit = 6): array
     {
-        // Try to use cached confidence scores if available
+        // Use aggressive caching with multiple layers for optimal performance
+        $cacheKey = 'popular_recommendations_v2_' . $limit;
+        
+        // Layer 1: Memory cache (fastest)
+        if (Cache::has($cacheKey)) {
+            return Cache::get($cacheKey);
+        }
+        
+        // Layer 2: File cache with pre-computed confidence scores
         if (file_exists($this->confidenceCachePath)) {
             $cachedData = json_decode(file_get_contents($this->confidenceCachePath), true);
             if (isset($cachedData['scores']) && !empty($cachedData['scores'])) {
+                // Optimized query with single database call
                 $movieIds = array_keys($cachedData['scores']);
-                $movieIds = array_slice($movieIds, 0, $limit * 2); // Get more than needed
+                $movieIds = array_slice($movieIds, 0, $limit * 2);
                 
-                $movies = Movie::with('genre')
-                    ->withAvg('ratings', 'rating')
-                    ->withCount(['ratings', 'rentals'])
+                $movies = Movie::with(['genre', 'ratings', 'rentals'])
                     ->whereIn('id', $movieIds)
                     ->orderByRaw('FIELD(id, ' . implode(',', $movieIds) . ')')
                     ->get();
                 
-                return $movies->map(function($movie) use ($cachedData) {
+                $result = $movies->map(function($movie) use ($cachedData) {
                     return [
                         'movie' => $movie,
-                        'predicted_rating' => $movie->ratings_avg_rating ?? 0,
+                        'predicted_rating' => $movie->ratings->avg('rating') ?? 0,
                         'confidence' => $cachedData['scores'][$movie->id] ?? 0.8
                     ];
                 })->take($limit)->toArray();
+                
+                // Cache in memory for 1 hour
+                Cache::put($cacheKey, $result, 3600);
+                return $result;
             }
         }
         
-        // Fallback to real-time calculation if cache not available
-        $movies = Movie::with('genre')
+        // Layer 3: Optimized real-time calculation with caching
+        $movies = Movie::with(['genre', 'ratings', 'rentals'])
             ->withAvg('ratings', 'rating')
-            ->withCount(['ratings', 'rentals'])
+            ->withCount('rentals')
             ->having('ratings_avg_rating', '>', 0)
             ->orderBy('ratings_avg_rating', 'desc')
             ->orderBy('rentals_count', 'desc')
-            ->take($limit * 2) // Get more movies to allow for confidence-based sorting
+            ->take($limit * 2)
             ->get();
 
         $recommendations = $movies->map(function($movie) {
             return [
                 'movie' => $movie,
-                'predicted_rating' => $movie->ratings_avg_rating ?? 0,
+                'predicted_rating' => $movie->ratings->avg('rating') ?? 0,
                 'confidence' => $this->calculatePopularityConfidence($movie)
             ];
         })->sortByDesc('confidence')->values()->take($limit)->toArray();
 
+        // Cache the result for future requests
+        Cache::put($cacheKey, $recommendations, 3600);
+        
         return $recommendations;
     }
 
     /**
-     * Cache popularity confidence scores for all movies
+     * Cache popularity confidence scores for all movies with optimizations
      */
     protected function cachePopularityConfidence(): void
     {
-        $movies = Movie::withAvg('ratings', 'rating')
-            ->withCount(['ratings', 'rentals'])
-            ->having('ratings_avg_rating', '>', 0)
-            ->get();
-
+        // Process movies in batches for better memory efficiency
         $confidenceScores = [];
+        $batchSize = 200;
+        $totalMovies = Movie::whereHas('ratings')->count();
         
-        foreach ($movies as $movie) {
-            $confidenceScores[$movie->id] = $this->calculatePopularityConfidence($movie);
+        for ($offset = 0; $offset < $totalMovies; $offset += $batchSize) {
+            $movies = Movie::with(['ratings', 'rentals'])
+                ->whereHas('ratings')
+                ->skip($offset)
+                ->take($batchSize)
+                ->get();
+            
+            foreach ($movies as $movie) {
+                // Direct calculation without method call overhead
+                $ratingsCount = $movie->ratings->count();
+                $rentalsCount = $movie->rentals->count();
+                $avgRating = $movie->ratings->avg('rating') ?? 0;
+                
+                // Fast confidence calculation
+                if ($ratingsCount >= 100 && $avgRating >= 4.5) {
+                    $confidenceScores[$movie->id] = 0.95;
+                } else {
+                    $ratingConfidence = $ratingsCount >= 100 ? 0.5 : ($ratingsCount / 200);
+                    $rentalConfidence = $rentalsCount >= 200 ? 0.3 : ($rentalsCount / 666);
+                    $qualityConfidence = $avgRating >= 4.5 ? 0.2 : (($avgRating - 3) / 10);
+                    $totalConfidence = max(0.1, $ratingConfidence + $rentalConfidence + $qualityConfidence);
+                    $confidenceScores[$movie->id] = round($totalConfidence, 2);
+                }
+            }
+            
+            // Clear memory after each batch
+            unset($movies);
         }
-        
-        // Sort movies by confidence (descending) and store
-        uasort($confidenceScores, function($a, $b) {
-            return $b <=> $a;
-        });
+
+        // Sort by confidence for better recommendations (descending)
+        arsort($confidenceScores);
         
         file_put_contents($this->confidenceCachePath, json_encode([
             'scores' => $confidenceScores,
             'timestamp' => now()->toDateTimeString(),
-            'count' => count($confidenceScores)
+            'count' => count($confidenceScores),
+            'optimized' => true
         ], JSON_PRETTY_PRINT));
+        
+        // Also cache in memory for immediate use
+        Cache::put('popularity_confidence_scores', $confidenceScores, 86400);
     }
 
     /**
@@ -699,20 +968,26 @@ class MovieRecommender
      */
     protected function calculatePopularityConfidence(Movie $movie): float
     {
-        $ratingsCount = $movie->ratings_count ?? 0;
-        $rentalsCount = $movie->rentals_count ?? 0;
-        $avgRating = $movie->ratings_avg_rating ?? 0;
+        // Use eager-loaded relationships for better performance
+        $ratingsCount = $movie->ratings->count();
+        $rentalsCount = $movie->rentals->count();
+        $avgRating = $movie->ratings->avg('rating') ?? 0;
 
-        // Base confidence from ratings count (0-0.5)
-        $ratingConfidence = min(0.5, ($ratingsCount / 100));
+        // Optimized confidence calculation with early exit for popular movies
+        if ($ratingsCount >= 100 && $avgRating >= 4.5) {
+            return 0.95; // Very high confidence for highly rated popular movies
+        }
 
-        // Additional confidence from rentals (0-0.3)
-        $rentalConfidence = min(0.3, ($rentalsCount / 200));
+        // Base confidence from ratings count (0-0.5) - faster calculation
+        $ratingConfidence = $ratingsCount >= 100 ? 0.5 : ($ratingsCount / 200);
 
-        // Additional confidence from high ratings (0-0.2)
-        $qualityConfidence = min(0.2, (($avgRating - 3) / 2));
+        // Additional confidence from rentals (0-0.3) - optimized
+        $rentalConfidence = $rentalsCount >= 200 ? 0.3 : ($rentalsCount / 666);
 
-        // Minimum confidence of 0.6 for popular items
+        // Additional confidence from high ratings (0-0.2) - simplified
+        $qualityConfidence = $avgRating >= 4.5 ? 0.2 : (($avgRating - 3) / 10);
+
+        // Minimum confidence of 0.1 for all items
         $totalConfidence = max(0.1, $ratingConfidence + $rentalConfidence + $qualityConfidence);
 
         return round($totalConfidence, 2);

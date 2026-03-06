@@ -136,11 +136,24 @@
             "animated",
             "fantasy",
             "documentary",
+            "documentaries",
             "crime",
             "mystery",
             "family",
-            "history"
+            "history",
+            "musical",
+            "western",
+            "war",
+            "biography",
+            "sport",
+            "noir",
+            "superhero"
         ],
+        "genre_patterns": [
+            "movies of ([\\w]+)",
+            "movie of ([\\w]+)"
+        ],
+        "movie_indicators": ["movie", "movies", "film", "films"],
         "year": [
             "year",
             "date",
@@ -205,6 +218,14 @@
             "^any suggestions",
             "^can you recommend"
         ],
+        "genre_question_patterns": [
+            "what.*genres.*exist", "what.*genres.*are there",
+            "which.*genres.*exist", "which.*genres.*are there",
+            "witch.*genres.*exist", "witch.*movies.*genre.*exist",
+            "what.*movie.*genres.*exist", "what.*film.*genres.*exist",
+            "list.*genres", "show.*genres", "display.*genres",
+            "what genres are available", "what types of movies are there"
+        ],
         "actor_title_phrases": [
             "who starred in ",
             "who acted in ",
@@ -213,7 +234,10 @@
             "what is the cast in ",
             "who stars in ",
             "who plays in ",
-            "starred in "
+            "starred in ",
+            "movies with ",
+            "films with ",
+            "with "
         ],
         "actor_title_patterns": [
             "who starred in .+\\??",

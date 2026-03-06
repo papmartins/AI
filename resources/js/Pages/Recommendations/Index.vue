@@ -32,7 +32,7 @@ const props = defineProps({
                                     :movie="rec.movie"
                                     :rented-movie-ids="[]"
                                     :show-score="true"
-                                    :score="Number(rec.movie?.ratings_avg_rating)?.toFixed(1)"
+                                    :score="Number(rec.predicted_rating)?.toFixed(1)"
                                     :confidence="rec.confidence"
                                 />
                             </div>

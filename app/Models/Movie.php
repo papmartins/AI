@@ -31,6 +31,10 @@ use HasFactory;
     }
     
     public function getAvgRatingAttribute() {
+        // Use the loaded relationship if available, otherwise query
+        if ($this->relationLoaded('ratings') && $this->ratings->isNotEmpty()) {
+            return round($this->ratings->avg('rating'), 2);
+        }
         return round($this->ratings()->avg('rating') ?? 0, 2);
     }
 }

@@ -74,7 +74,14 @@ def test_and_compare(question, language_hint=None):
         
         # Check if result matches expected (case-insensitive and order-insensitive comparison)
         matches = True
-        if expected:
+        
+        # Get expected result from dictionary
+        expected = EXPECTED_RESULTS.get(question, {})
+        
+        # If expected is empty but result has content, it's a mismatch
+        if not expected and (result.get('intents') or result.get('entities')):
+            matches = False
+        elif expected:
             # Check intents (case-insensitive and order-insensitive)
             result_intents = [intent.lower() for intent in result.get('intents', [])]
             expected_intents = [intent.lower() for intent in expected.get('intents', [])]
@@ -139,6 +146,7 @@ def test_and_compare(question, language_hint=None):
 
 # Expected results for comparison
 EXPECTED_RESULTS = {
+    "Filmes com Brad Pitt": {"intents": ["title"], "entities": {"actor": ["Brad Pitt"]}},
     "Filmes protagonizados por Bruce Willis": {"intents": ["title"], "entities": {"actor": ["Bruce Willis"]}},
     "Filmes dirigidos por Christopher Nolan": {"intents": ["title"], "entities": {"director": ["Christopher Nolan"]}},
     "Filmes com a atriz Charlize Theron": {"intents": ["title"], "entities": {"actor": ["Charlize Theron"]}},
@@ -154,8 +162,10 @@ EXPECTED_RESULTS = {
     "Que filmes existem com o realizador George Miller e o ator Charlize Theron?": {"intents": ["title"], "entities": {"director": ["George Miller"], "actor": ["Charlize Theron"]}},
     "Qual o elenco e quem dirigiu Mad Max?": {"intents": ["actor", "director"], "entities": {"title": ["Mad Max"]}},
     "Qual a avaliação do Mad Max?": {"intents": ["rating"], "entities": {"title": ["Mad Max"]}},
-    "Mostra-me filmes de ação com Brad Pitt de 2010": {"intents": ["title"], "entities": {"actor": ["Brad Pitt"],"year": ["2010"], "genre": ["action"]}},
+    "Mostra-me filmes de ação com Brad Pitt de 2010": {"intents": ["title"], "entities": {"actor": ["Brad Pitt"],"year": ["2010"], "genre": ["ação"]}},
+    "Dá-me filmes de ação": {"intents": ["title"], "entities": {"genre": ["ação"]}},
 
+    "Movies with Brad Pitt": {"intents": ["title"], "entities": {"actor": ["Brad Pitt"]}},
     "Movies starring Bruce Willis": {"intents": ["title"], "entities": {"actor": ["Bruce Willis"]}},
     "Movies directed by Christopher Nolan": {"intents": ["title"], "entities": {"director": ["Christopher Nolan"]}},
     "Movies starring Charlize Theron": {"intents": ["title"], "entities": {"actor": ["Charlize Theron"]}},
@@ -172,10 +182,17 @@ EXPECTED_RESULTS = {
     "What is the cast and who directed Mad Max?": {"intents": ["actor", "director"], "entities": {"title": ["Mad Max"]}},
     "What is the rating of Mad Max?": {"intents": ["rating"], "entities": {"title": ["Mad Max"]}},
     "Show me action movies with Brad Pitt from 2010": {"intents": ["title"], "entities": {"actor": ["Brad Pitt"],"year": ["2010"], "genre": ["action"]}},
+    "Give me action movies": {"intents": ["title"], "entities": {"genre": ["action"]}},
+    
+    "Dá-me filmes de documentários": {"intents": ["title"], "entities": {"genre": ["documentários"]}},
+    "Que generos de filmes existem?": {"intents": ["genre"], "entities": {}},
+    "Witch movies genre exists?": {"intents": ["genre"], "entities": {}},
+    "Qual o genero do filme Die Hard?": {"intents": ["genre"], "entities": {"title": ["Die Hard"]}},
 }
 
 print("\n--- Question about Movies Tests ---")
 # Run tests
+test_and_compare("Filmes com Brad Pitt", "pt")
 test_and_compare("Mostra-me filmes de ação com Brad Pitt de 2010", "pt")
 test_and_compare("Qual o elenco e quem dirigiu Mad Max?", "pt")
 test_and_compare("Filmes protagonizados por Bruce Willis", "pt")
@@ -193,6 +210,7 @@ test_and_compare("Qual é o elenco de Die Hard?", "pt")
 test_and_compare("Qual a avaliação do Mad Max?", "pt")
 test_and_compare("Que filmes existem com o realizador George Miller e o ator Charlize Theron?", "pt")
 
+test_and_compare("Movies with Brad Pitt", "en")
 test_and_compare("Show me action movies with Brad Pitt from 2010", "en")
 test_and_compare("What is the cast and who directed Mad Max?", "en")
 test_and_compare("Movies starring Bruce Willis", "en")
@@ -209,6 +227,11 @@ test_and_compare("Who starred in Inception?", "en")
 test_and_compare("What is the cast in Die Hard?", "en")
 test_and_compare("What is the rating of Mad Max?", "en")
 test_and_compare("What movies are there with director George Miller and actress Charlize Theron?", "en")
+
+test_and_compare("Dá-me filmes de documentários", "pt")
+test_and_compare("Que generos de filmes existem?", "pt")
+test_and_compare("Qual o genero do filme Die Hard?", "pt")
+test_and_compare("Witch movies genre exists?", "en")
 
 print(f"\n{'='*70}")
 print(f"SUMMARY: {wrong_count} wrong out of {total_count} tests")

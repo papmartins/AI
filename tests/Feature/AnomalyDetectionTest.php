@@ -22,7 +22,9 @@ class AnomalyDetectionTest extends TestCase
         
         // Create a genre if it doesn't exist
         $genre = \App\Models\Genre::firstOrCreate([
-            'name' => 'Test Genre'
+            'name_en' => 'Test Genre',
+            'name_es' => 'Teste Genre',
+            'name_pt' => 'Teste Género'
         ]);
         
         // Create movies if they don't exist

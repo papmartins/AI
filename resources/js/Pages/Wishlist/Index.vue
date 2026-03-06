@@ -54,7 +54,7 @@
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex gap-2">
                         <span class="px-3 py-1 bg-indigo-100 text-indigo-800 text-xs rounded-full">
-                        {{ movie.genre.name }}
+                        {{ movie.genre[name + '_' + locale] }}
                         </span>
                         <span v-if="movie.age_rating" class="px-3 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-semibold">
                         {{ movie.age_rating + '+'}}

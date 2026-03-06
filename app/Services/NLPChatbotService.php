@@ -145,7 +145,14 @@ class NLPChatbotService
             }
         }
         
-        $movies = $query->with(['genre', 'ratings'])->get();
+        if (empty($entities)) {
+            if ($intents != ['genre']) {
+                return $this->getLanguageResponse('no_entities_found', $language);
+            }
+            $movies = new Collection();
+        } else {
+            $movies = $query->with(['genre', 'ratings'])->limit(10)->get(); 
+        }
         
         $response = "";
         foreach ($intents as $intent) {
@@ -160,7 +167,7 @@ class NLPChatbotService
     protected function formatMoviesResponse(Collection $movies, string $language, string $intent): string
     {
 
-        if ($movies->isEmpty()) {
+        if ($movies->isEmpty() && $intent != 'genre') {
             return $this->getLanguageResponse($this->intentConfig[$intent]['response_not_founded'], $language, []);
         }
 
@@ -184,7 +191,7 @@ class NLPChatbotService
                 break;
             case 'genre':
                 if ($movies->isEmpty()) {
-                    $list = Genre::pluck('name')->implode("\n");
+                    $list = Genre::get()->pluck('name_' . $language)->implode("\n");
                 } else {
                     $list = collect($movies)->map(function (Movie $movie) {
                         return "• {$movie->genre->name}";

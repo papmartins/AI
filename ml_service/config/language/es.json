@@ -35,7 +35,12 @@
   "keywords": {
     "director": ["director", "directora", "directores", "directoras", "realizador", "realizadora", "dirigido por"],
     "actor": ["actor", "actriz", "actores", "actrices", "reparto", "elenco", "protagonista", "protagonizó"],
-    "genre": ["género", "genero", "acción", "comedia", "drama", "terror", "romance", "ciencia ficción", "aventura", "suspense", "animación", "fantasía", "documental", "crimen", "misterio", "familia", "historia"],
+    "genre": ["género", "genero", "acción", "comedia", "drama", "terror", "romance", "ciencia ficción", "aventura", "suspense", "animación", "fantasía", "documental", "documentales", "crimen", "misterio", "familia", "historia", "musical", "western", "guerra", "biografía", "deporte", "noir", "superhéroe"],
+    "genre_patterns": [
+        "películas de ([\\w]+)",
+        "película de ([\\w]+)"
+    ],
+    "movie_indicators": ["película", "películas"],
     "year": ["año", "fecha", "estreno", "lanzamiento", "exhibición"],
     "rating": ["valoración", "puntuación", "calificación", "estrella", "estrellas", "nota", "crítica", "bueno", "malo", "excelente", "genial", "pésimo"],
     "title": ["título", "nombre", "llamado", "titulado"],
@@ -48,11 +53,18 @@
         "^recomendar ", "^sugerir ", "^qué películas", "^qué me recomiendas",
         "^qué puedo ver", "^sugiere"
     ],
+    "genre_question_patterns": [
+        "qué.*géneros.*existen", "qué.*generos.*existen",
+        "cuáles.*géneros.*existen", "cuáles.*generos.*existen",
+        "qué.*géneros.*hay", "qué.*generos.*hay",
+        "qué.*tipos.*de.*películas.*hay", "qué.*tipos.*de.*películas.*existen",
+        "lista.*géneros", "muestra.*géneros", "qué.*géneros.*hay.*en.*el.*cine"
+    ],
     "actor_title_phrases": [
         "quién protagonizó ", "quién actuó en ", "quién estuvo en ",
         "cuál es el elenco de ", "cuál es el reparto de ",
         "quién actúa en ", "quién interpreta en ",
-        "protagonizó "
+        "protagonizó ", "películas con ", "con "
     ],
     "actor_title_patterns": [
         "quién protagonizó .+\\??",

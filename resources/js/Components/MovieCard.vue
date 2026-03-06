@@ -21,7 +21,7 @@
     </div>
     <div class="flex justify-between items-center mb-4">
       <div class="flex gap-2">
-        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">{{ movie.genre.name }}</span>
+        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">{{ movie.genre[name + '_' + locale] }}</span>
       </div>
       <span v-if="movie.age_rating" class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-semibold">
         {{ movie.age_rating + '+' }}

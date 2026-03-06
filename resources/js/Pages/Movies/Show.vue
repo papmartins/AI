@@ -32,7 +32,7 @@
                     {{ movie.year }}
                   </span>
                   <span class="px-4 py-2 bg-blue-100 text-blue-800 rounded-full">
-                    {{ movie.genre.name }}
+                    {{ movie.genre[name + '_' + locale] }}
                   </span>
                   <span v-if="movie.age_rating" class="px-4 py-2 bg-purple-100 text-purple-800 rounded-full font-semibold">
                     {{ movie.age_rating + '+' }}

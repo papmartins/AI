@@ -35,7 +35,12 @@
   "keywords": {
     "director": ["diretor", "diretora", "diretores", "diretoras", "realizador", "realizadora", "dirigido por", "dirigidos por", "dirigidos", "dirigiu", "directed"],
     "actor": ["ator", "atriz", "atores", "atrizes", "elenco", "estrela", "protagonizado por", "protagonizados por", "protagonizadas por", "protagonizados", "protagonizou", "cast"],
-    "genre": ["gênero", "genero", "ação", "comédia", "drama", "terror", "romance", "ficção", "ficção científica", "aventura", "suspense", "animação", "fantasia", "documentário", "crime", "mistério", "familia", "história"],
+    "genre": ["gênero", "genero", "ação", "comédia", "drama", "terror", "romance", "ficção", "ficção científica", "aventura", "suspense", "animação", "fantasia", "documentário", "documentários", "crime", "mistério", "familia", "história", "musical", "western", "guerra", "biografia", "esporte", "noir", "super-herói"],
+    "genre_patterns": [
+        "filmes de ([\\w]+)",
+        "filme de ([\\w]+)"
+    ],
+    "movie_indicators": ["filme", "filmes"],
     "year": ["ano", "data", "lançamento", "estreia", "exibição"],
     "rating": ["avaliação", "avaliações", "nota", "notas", "classificação", "estrela", "estrelas", "bom", "ruim", "ótimo", "excelente", "péssimo"],
     "title": ["título", "nome", "chamado", "intitulado"],
@@ -48,11 +53,24 @@
         "^recomende ", "^recomenda ", "^recomendar ",
         "^sugira ", "^sugerir "
     ],
+    "genre_question_patterns": [
+        "quais.*gêneros.*existem", "quais.*generos.*existem",
+        "que.*gêneros.*existem", "que.*generos.*existem",
+        "quais.*gêneros.*há", "quais.*generos.*há",
+        "quais.*gêneros.*tem", "quais.*generos.*tem",
+        "quais.*gêneros.*tem o cinema", "quais.*generos.*tem o cinema"
+    ],
+    "genre_of_movie_patterns": [
+        "qual.*gênero.*do.*filme", "qual.*genero.*do.*filme",
+        "qual.*gênero.*da.*película", "qual.*genero.*da.*película",
+        "que.*gênero.*é.*o.*filme", "que.*genero.*é.*o.*filme",
+        "qual.*gênero.*é", "qual.*genero.*é"
+    ],
     "actor_title_phrases": [
         "quem protagonizou ", "quem estrelou ", "quem atuou em ",
         "qual é o elenco de ", "qual é o elenco em ",
         "quem estrela ", "quem interpreta em ",
-        "protagonizou "
+        "protagonizou ", "filmes com ", "com "
     ],
     "title_in_title_phrases": [
         "com .+ no título", "com .+ no nome"

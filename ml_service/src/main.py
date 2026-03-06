@@ -111,7 +111,9 @@ def classify_intent_endpoint(request: QuestionRequest):
     """Classify intents from user question"""
     try:
         language = detect_language(request.question)
+        logger.info(f"HTTP API - Question: {request.question}, Detected language: {language}")
         result = classify_intents(request.question, language, models, language_detector.languages)
+        logger.info(f"HTTP API - Result: {result}")
         return result
     except Exception as e:
         logger.error(f"Error in classify_intent endpoint: {e}")

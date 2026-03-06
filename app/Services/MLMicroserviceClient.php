@@ -122,7 +122,26 @@ class MLMicroserviceClient
         $intents = [];
         $entities = [];
         
-        // Simple fallback logic
+        // Check for genre queries
+        $genreKeywords = ['ação', 'comédia', 'drama', 'terror', 'romance', 'ficção', 
+                         'aventura', 'suspense', 'animação', 'fantasia', 'documentário',
+                         'action', 'comedy', 'horror', 'sci-fi', 'adventure', 'thriller',
+                         'animation', 'fantasy', 'documentary', 'crime', 'mystery'];
+        
+        foreach ($genreKeywords as $genre) {
+            if (str_contains($lowerQuestion, $genre)) {
+                $intents[] = 'title'; // We're looking for movies (title) of this genre
+                $entities['genre'] = [$genre];
+                return [
+                    'intents' => $intents,
+                    'entities' => $entities,
+                    'language' => str_contains($lowerQuestion, 'ação') || str_contains($lowerQuestion, 'gênero') ? 'pt' : 'en',
+                    'confidence' => 0.7
+                ];
+            }
+        }
+        
+        // Simple fallback logic for other intents
         if (str_contains($lowerQuestion, 'actor') || str_contains($lowerQuestion, 'ator')) {
             $intents[] = 'actor';
         }
@@ -140,13 +159,14 @@ class MLMicroserviceClient
         }
         
         if (empty($intents)) {
-            $intents[] = 'unknown';
+            // Default to title intent for movie searches
+            $intents[] = 'title';
         }
         
         return [
             'intents' => $intents,
             'entities' => $entities,
-            'language' => 'en',
+            'language' => str_contains($lowerQuestion, 'ação') || str_contains($lowerQuestion, 'gênero') ? 'pt' : 'en',
             'confidence' => 0.5
         ];
     }

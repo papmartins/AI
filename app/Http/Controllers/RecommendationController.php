@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\MovieRecommender;
+use App\Services\Recommendation\MovieRecommendationService;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class RecommendationController extends Controller
 {
-    public function __construct(protected MovieRecommender $recommender)
+    public function __construct(protected MovieRecommendationService $recommender)
     {
     }
 
@@ -56,7 +56,7 @@ class RecommendationController extends Controller
     {
         $this->authorize('retrain-models', User::class);
         
-        $result = $this->recommender->retrain();
+        $result = $this->recommender->retrainMLModel();
         
         return response()->json([
             'success' => true,

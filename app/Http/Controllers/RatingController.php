@@ -3,12 +3,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Movie;
 use App\Models\Rating;
-use App\Services\MovieRecommender;
+use App\Services\Recommendation\MovieRecommendationService;
 use Illuminate\Http\Request;
 
 class RatingController extends Controller
 {
-    public function __construct(protected MovieRecommender $recommender)
+    public function __construct(protected MovieRecommendationService $recommender)
     {
     }
     public function store(Request $request, String $locale, Movie $movie)

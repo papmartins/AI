@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\MovieRecommender;
+use App\Services\Recommendation\MovieRecommendationService;
 use Illuminate\Console\Command;
 
 class TrainRecommendationModel extends Command
@@ -10,17 +10,17 @@ class TrainRecommendationModel extends Command
     protected $signature = 'recommendations:train {--force : Force retraining even if model exists}';
     protected $description = 'Train the movie recommendation model using Rubix ML';
 
-    public function handle(MovieRecommender $recommender)
+    public function handle(MovieRecommendationService $recommender)
     {
         $this->info('Starting movie recommendation model training...');
         
         $startTime = microtime(true);
         
         if ($this->option('force')) {
-            $result = $recommender->retrain();
+            $result = $recommender->retrainMLModel();
             $this->info('Forced retraining completed.');
         } else {
-            $result = $recommender->retrain();
+            $result = $recommender->retrainMLModel();
         }
         
         $endTime = microtime(true);

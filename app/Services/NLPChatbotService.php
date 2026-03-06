@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Genre;
 use App\Models\Movie;
+use App\Services\Recommendation\MovieRecommendationService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -26,7 +27,7 @@ class NLPChatbotService
             'rating' => ['column' => 'rating', 'response_founded' => 'rating_found', 'response_not_founded' => 'rating_not_found'],
         ];
     
-    public function __construct(MovieRecommender $movieRecommender)
+    public function __construct(MovieRecommendationService $movieRecommender)
     {
         $this->mlClient = new MLMicroserviceClient();
         $this->movieRecommender = $movieRecommender;

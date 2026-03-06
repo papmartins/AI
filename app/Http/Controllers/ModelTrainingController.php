@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Services\MovieRecommender;
+use App\Services\Recommendation\MovieRecommendationService;
 use App\Services\AnomalyDetector;
 use App\Services\TrainingTimeLogger;
 use Illuminate\Support\Facades\Log;
@@ -30,11 +30,11 @@ class ModelTrainingController extends Controller
     /**
      * Train the movie recommendation model
      */
-    public function trainRecommendationModel(MovieRecommender $recommender, TrainingTimeLogger $timeLogger)
+    public function trainRecommendationModel(MovieRecommendationService $recommender, TrainingTimeLogger $timeLogger)
     {
         try {
             $startTime = microtime(true);
-            $result = $recommender->retrain();
+            $result = $recommender->retrainMLModel();
             $trainingTime = microtime(true) - $startTime;
 
             // Log training time persistently
@@ -90,14 +90,14 @@ class ModelTrainingController extends Controller
     /**
      * Train all models
      */
-    public function trainAllModels(MovieRecommender $movieRecommender, AnomalyDetector $anomalyDetector, TrainingTimeLogger $timeLogger)
+    public function trainAllModels(MovieRecommendationService $movieRecommender, AnomalyDetector $anomalyDetector, TrainingTimeLogger $timeLogger)
     {
         try {
             $startTime = microtime(true);
             $movieStart = microtime(true);
 
             // Train recommendation model
-            $movieResult = $movieRecommender->retrain();
+            $movieResult = $movieRecommender->retrainMLModel();
             $movieTrainingTime = microtime(true) - $movieStart;
 
             $anomalyStart = microtime(true);

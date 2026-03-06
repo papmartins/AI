@@ -5,21 +5,21 @@ namespace Tests\Unit;
 use App\Models\User;
 use App\Models\Movie;
 use App\Models\Rating;
-use App\Services\MovieRecommender;
+use App\Services\Recommendation\MovieRecommendationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
-class MovieRecommenderCachingTest extends TestCase
+class MovieRecommendationServiceCachingTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected MovieRecommender $recommender;
+    protected MovieRecommendationService $recommender;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->recommender = new MovieRecommender();
+        $this->recommender = new MovieRecommendationService();
     }
 
     public function test_frequent_user_caching()

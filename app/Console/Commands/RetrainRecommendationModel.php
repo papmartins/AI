@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Services\MovieRecommender;
+use App\Services\Recommendation\MovieRecommendationService;
 use Illuminate\Support\Facades\Storage;
 
 class RetrainRecommendationModel extends Command
@@ -25,7 +25,7 @@ class RetrainRecommendationModel extends Command
     /**
      * Execute the console command.
      */
-    public function handle(MovieRecommender $recommender)
+    public function handle(MovieRecommendationService $recommender)
     {
         $this->info('Starting model retraining...');
         
@@ -61,7 +61,7 @@ class RetrainRecommendationModel extends Command
         $startTime = microtime(true);
         
         try {
-            $estimator = $recommender->retrain();
+            $estimator = $recommender->retrainMLModel();
             $endTime = microtime(true);
             
             $trainingTime = round($endTime - $startTime, 2);

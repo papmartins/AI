@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\MovieRecommender;
+use App\Services\Recommendation\MovieRecommendationService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
-    public function __construct(protected MovieRecommender $recommender)
+    public function __construct(protected MovieRecommendationService $recommender)
     {
     }
 

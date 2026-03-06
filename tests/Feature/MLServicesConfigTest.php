@@ -6,7 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use App\Services\IrisClassifier;
-use App\Services\MovieRecommender;
+use App\Services\Recommendation\MovieRecommendationService;
 use App\Services\AnomalyDetector;
 
 class MLServicesConfigTest extends TestCase
@@ -24,9 +24,10 @@ class MLServicesConfigTest extends TestCase
         $this->assertStringContainsString('iris.csv', $irisDatasetPath);
         
         // Test Movie Recommender Service
-        $movieService = new MovieRecommender();
-        $movieModelPath = $this->getPrivateProperty($movieService, 'modelPath');
-        $movieDatasetPath = $this->getPrivateProperty($movieService, 'datasetPath');
+        $movieService = new MovieRecommendationService();
+        $mlService = $this->getPrivateProperty($movieService, 'mlService');
+        $movieModelPath = $this->getPrivateProperty($mlService, 'modelPath');
+        $movieDatasetPath = $this->getPrivateProperty($mlService, 'datasetPath');
         $this->assertStringContainsString('movie_recommender.model', $movieModelPath);
         $this->assertStringContainsString('movie_recommendations.csv', $movieDatasetPath);
         
@@ -53,8 +54,9 @@ class MLServicesConfigTest extends TestCase
         $irisModelPath = $this->getPrivateProperty($irisService, 'modelPath');
         $this->assertStringContainsString('custom/iris_custom.model', $irisModelPath);
         
-        $movieService = new MovieRecommender();
-        $movieModelPath = $this->getPrivateProperty($movieService, 'modelPath');
+        $movieService = new MovieRecommendationService();
+        $mlService = $this->getPrivateProperty($movieService, 'mlService');
+        $movieModelPath = $this->getPrivateProperty($mlService, 'modelPath');
         $this->assertStringContainsString('custom/recommender_custom.model', $movieModelPath);
         
         $anomalyService = new AnomalyDetector();

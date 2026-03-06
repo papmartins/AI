@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Models\Movie;
 use App\Models\Rating;
-use App\Services\MovieRecommender;
+use App\Services\Recommendation\MovieRecommendationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -15,8 +15,8 @@ class RecommendationTest extends TestCase
 
     public function test_recommender_service_can_be_instantiated()
     {
-        $recommender = new MovieRecommender();
-        $this->assertInstanceOf(MovieRecommender::class, $recommender);
+        $recommender = new MovieRecommendationService();
+        $this->assertInstanceOf(MovieRecommendationService::class, $recommender);
     }
 
     public function test_popular_recommendations_work()
@@ -44,7 +44,7 @@ class RecommendationTest extends TestCase
             }
         }
         
-        $recommender = new MovieRecommender();
+        $recommender = new MovieRecommendationService();
         $recommendations = $recommender->getPopularRecommendations(3);
         
         $this->assertCount(3, $recommendations);
@@ -67,7 +67,7 @@ class RecommendationTest extends TestCase
             ]);
         }
         
-        $recommender = new MovieRecommender();
+        $recommender = new MovieRecommendationService();
         $recommendations = $recommender->recommendForUser($user, 3);
         
         $this->assertIsArray($recommendations);

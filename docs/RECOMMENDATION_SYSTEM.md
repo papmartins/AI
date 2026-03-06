@@ -1,4 +1,4 @@
-# Movie Recommendation System - Rubix ML with KNN Regression
+# Movie Recommendation System - Refactored Service Architecture with Rubix ML
 
 ## Overview
 
@@ -11,27 +11,62 @@ This implementation provides personalized movie recommendations using a machine 
 
 ## Architecture
 
+### Refactored Service Architecture
+
+```
+User Request → MovieRecommendationService (Coordinator)
+    ├── MLRecommendationService (ML Predictions)
+    │   ├── Dataset Preparation
+    │   ├── KNN Model Training
+    │   └── ML-Based Predictions
+    │
+    └── PopularityRecommendationService (Popularity-Based)
+        ├── Popular Recommendations
+        ├── Fallback Recommendations
+        └── Confidence Caching
+
+All services → Smart Caching Layer → Frontend Display
+```
+
+### Original Architecture (for reference)
+
 ```
 User Interactions → Dataset Preparation (CSV) → KNN Model Training → ML Predictions → Fallback Handler → Frontend Display
 ```
 
 ## Components
 
-### 1. MovieRecommender Service (`app/Services/MovieRecommender.php`)
+### 1. MovieRecommendationService (`app/Services/Recommendation/MovieRecommendationService.php`)
 
-The core recommendation engine that:
-- **Prepares dataset** from user interactions (ratings, rentals, wishlists)
-- **Extracts numeric features**:
+The main recommendation service that coordinates:
+- **ML-based recommendations** via MLRecommendationService
+- **Popularity-based recommendations** via PopularityRecommendationService
+- **Smart caching** for frequent users (≥5 interactions)
+- **Fallback strategy** when ML predictions fail
+- **Cache management** and invalidation
+
+### 2. MLRecommendationService (`app/Services/Recommendation/MLRecommendationService.php`)
+
+Handles machine learning aspects:
+- **Dataset preparation** from user interactions (ratings, rentals, wishlists)
+- **Feature extraction**:
   - **rental_percentage**: Percentage of users who rented the movie (0-1)
   - **avg_rental_age**: Average age of users who rented the movie
   - **avg_rating**: Average rating of the movie (1-5)
   - **avg_good_rating_age**: Average age of users who gave good ratings (>3.5)
-- **Trains KNN Regressor** using 10 weighted neighbors with cosine distance
-- **Makes predictions** for unwatched movies using ML model
-- **Persists model** to filesystem for reuse
-- **Falls back** to popularity-based recommendations if ML inference fails
-- **Caches recommendations** for frequent users (≥5 interactions)
-- **Automatic retraining** when feature dimensions change
+- **KNN Regressor training** using 10 weighted neighbors with cosine distance
+- **Model persistence** to filesystem for reuse
+- **ML-based predictions** for unwatched movies
+- **Confidence calculation** for ML predictions
+
+### 3. PopularityRecommendationService (`app/Services/Recommendation/PopularityRecommendationService.php`)
+
+Handles popularity-based recommendations:
+- **Popular recommendations** based on ratings and rentals
+- **Fallback recommendations** when ML fails
+- **Confidence scoring** for popular items
+- **Confidence caching** for performance
+- **Genre-based filtering** for personalized fallback
 
 ### 2. Recommendation API (`app/Http/Controllers/RecommendationController.php`)
 
@@ -40,6 +75,8 @@ REST API endpoints:
 - `GET /api/recommendations/popular` - Popular movies (auth required)
 - `GET /api/recommendations/popular-public` - Public popular movies
 - `POST /api/recommendations/retrain` - Retrain the ML model (auth required)
+
+The controller now uses the new `MovieRecommendationService` which coordinates the three specialized services.
 
 ### 3. Data Model
 
@@ -352,48 +389,60 @@ php artisan tinker
 | Feature calculation errors | Missing birth_date or rental data | Ensure all users have birth_date filled |
 
 
-## Advantages of Rubix ML Approach
+## Advantages of Refactored Architecture
 
-### 1. Collaborative Filtering
-- Leverages patterns from similar users automatically
-- K-NN finds users with matching taste in feature space
-- More sophisticated than rule-based weighting
+### 1. Separation of Concerns
+- **MLRecommendationService**: Focuses exclusively on machine learning
+- **PopularityRecommendationService**: Handles popularity-based logic
+- **MovieRecommendationService**: Coordinates and manages caching
+- Clear boundaries between different recommendation strategies
 
-### 2. Adaptive Learning
-- Model adapts to new user behaviors and ratings
-- Captures complex interactions between features
-- Improves with more data over time
+### 2. Improved Maintainability
+- Smaller, focused classes (vs original 1075-line monolith)
+- Easier to understand and modify individual components
+- Better testability with isolated services
+- Clearer dependency management
 
-### 3. Personalization
-- **Demographic-based features**: Focus on age patterns of users who rented and rated movies
-- **Popularity-based features**: Combines rental percentage with rating quality
-- **Age-appropriate filtering**: Excludes movies with age_rating > user's age
-- **User age**: Used for filtering only, not as a prediction feature
+### 3. Enhanced Flexibility
+- Easy to swap recommendation algorithms
+- Can add new recommendation strategies without affecting existing ones
+- Independent service evolution
+- Better support for A/B testing different approaches
 
-### 4. Scalability
-- Pure numerical computation (no string/categorical overhead)
-- Cosine distance efficiently computable on 4-dimensional vectors
-- Predictions made without exponential complexity growth
-- Fixed 4-feature architecture ensures consistent performance
+### 4. Better Performance
+- **MLRecommendationService**: Optimized for ML operations
+- **PopularityRecommendationService**: Optimized for database queries
+- **MovieRecommendationService**: Optimized for caching and coordination
+- Each service can be tuned independently
 
-### 5. Model Persistence
-- Trained model reused across requests
-- No need to retrain on every prediction
-- Significant performance improvement vs re-computation
-- **Automatic retraining** when features change
+### 5. Improved Testing
+- Smaller services are easier to mock and test
+- Clear interfaces between components
+- Better unit test coverage potential
+- Easier integration testing
 
-### 6. Fallback Robustness
-- Graceful degradation to popularity-based approach
-- Hybrid strategy ensures recommendations always available
-- Prevents recommendation service outage
-- **Improved demographic fallback** with age filtering
+### 6. Backward Compatibility
+- Original `MovieRecommender` class maintained for compatibility
+- Existing code continues to work without changes
+- Gradual migration path for legacy code
+- No breaking changes to API contracts
 
-### 7. Confidence-Based Recommendations
-- **Dynamic confidence scoring** for popular recommendations
-- **Multi-factor confidence** considering ratings, rentals, and quality
-- **Cached confidence scores** for performance optimization
-- **Consistent ordering** across multiple requests
-- **Minimum confidence threshold** ensures quality recommendations
+### 7. Modern Architecture
+- Follows SOLID principles
+- Better adherence to Laravel best practices
+- Improved dependency injection
+- Clearer service boundaries
+
+## File Structure
+
+```
+app/Services/
+├── MovieRecommender.php (backward compatibility wrapper)
+└── Recommendation/
+    ├── MovieRecommendationService.php (main coordinator)
+    ├── MLRecommendationService.php (ML algorithms)
+    └── PopularityRecommendationService.php (popularity-based logic)
+```
 
 ## Dependencies
 
@@ -423,7 +472,7 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 
 # Via CLI
 php artisan tinker
->> app(App\Services\MovieRecommender::class)->retrain()
+>> app(App\Services\Recommendation\MovieRecommendationService::class)->retrainMLModel()
 ```
 
 ### Clear Cache
@@ -432,7 +481,7 @@ php artisan tinker
 php artisan cache:clear
 
 # Clear specific user cache (in code)
-app(App\Services\MovieRecommender::class)->clearUserCache($user)
+app(App\Services\Recommendation\MovieRecommendationService::class)->clearUserCache($user)
 ```
 - Faster recommendations
 - Lower resource usage
@@ -444,7 +493,14 @@ app(App\Services\MovieRecommender::class)->clearUserCache($user)
 
 ## Current Implementation Status ✅
 
-### Completed Features
+### Refactored Architecture
+1. **Service Separation**: Three specialized services with clear responsibilities
+2. **Backward Compatibility**: Original MovieRecommender class maintained
+3. **Improved Testing**: All tests updated to use new services
+4. **Documentation**: Comprehensive documentation of new architecture
+5. **Migration Path**: Clear guide for adopting new services
+
+### Completed Features (from original)
 1. **4-Feature Architecture**: rental_percentage, avg_rental_age, avg_rating, avg_good_rating_age
 2. **Age-Based Filtering**: Excludes movies with age_rating > user's age
 3. **Demographic Focus**: All features based on age patterns and popularity
@@ -495,6 +551,46 @@ app(App\Services\MovieRecommender::class)->clearUserCache($user)
 - Laravel framework
 - Standard PHP extensions
 - Database with proper indexing
+
+## Migration Guide
+
+### For Existing Code
+
+The original `MovieRecommender` class is maintained for backward compatibility:
+
+```php
+// Old code continues to work
+$recommender = new App\Services\MovieRecommender();
+$recommendations = $recommender->recommendForUser($user);
+```
+
+### For New Development
+
+Use the new services directly:
+
+```php
+// Recommended approach for new code
+use App\Services\Recommendation\MovieRecommendationService;
+
+$recommender = new MovieRecommendationService();
+$recommendations = $recommender->recommendForUser($user);
+```
+
+### Service-Specific Usage
+
+```php
+// Direct access to ML service
+use App\Services\Recommendation\MLRecommendationService;
+
+$mlService = new MLRecommendationService();
+$mlRecommendations = $mlService->getMLBasedRecommendations($user);
+
+// Direct access to popularity service
+use App\Services\Recommendation\PopularityRecommendationService;
+
+$popularityService = new PopularityRecommendationService();
+$popularRecommendations = $popularityService->getPopularRecommendations();
+```
 
 ## License
 
